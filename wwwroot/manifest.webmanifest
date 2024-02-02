@@ -1,10 +1,10 @@
 {
-  "name": "C3",
+  "name": "Conflict Command Center",
   "short_name": "C3",
   "id": "./",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#ffffff",
+  "background_color": "#32333d",
   "theme_color": "#03173d",
   "prefer_related_applications": false,
   "icons": [
