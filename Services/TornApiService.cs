@@ -8,8 +8,19 @@ public sealed class TornApiService(HttpClient httpClient, ProtectedTokenStore To
     public async Task<TornUser?> GetCurrentUserAsync()
     {
         var key = await TokenStore.GetTokenAsync();
+        
+        if (key is null) return null;
 
-        return await httpClient.GetFromJsonAsync<TornUser>($"user/?selections=profile&key={key}");
+        return await httpClient.GetFromJsonAsync<TornUser>(Endpoints.User().Profile().WithAuthorization(key));
+    }
+
+    public async Task<TornFaction?> GetCurrentUserFactionAsync()
+    {
+        var key = await TokenStore.GetTokenAsync();
+
+        if (key is null) return null;
+
+        return await httpClient.GetFromJsonAsync<TornFaction>(Endpoints.Faction().WithAuthorization(key));
     }
 
     public void Dispose() => httpClient.Dispose();
