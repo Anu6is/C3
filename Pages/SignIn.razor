@@ -1,0 +1,74 @@
+﻿@inject TornApiService ApiService
+@inject ProtectedTokenStore TokenStore
+
+<MudContainer Class="d-flex flex-column justify-center" MaxWidth="MaxWidth.Small" Style="height:100vh;">
+    <MudFocusTrap>
+        <MudCard Class="pa-8" Elevation="2">
+            <MudCardContent Class="d-flex justify-center">
+                <MudStack Row=true AlignItems="AlignItems.Center" Justify="Justify.SpaceEvenly" Style="width:100%">
+                    <MudImage Src="./icon-512.png" ObjectFit="ObjectFit.ScaleDown" ObjectPosition="ObjectPosition.Center" Style="max-width:calc(min(20vw, 150px))" />
+                    <MudForm @ref="@_form" @bind-IsValid="@_success" Class="mt-n8" Style="min-width:150px;" ValidationDelay="0">
+                        <MudTextField T="string" Label="Torn API Key" HelperText="Paste your API key" InputType="InputType.Password"
+                                      Immediate="true" Required="true" RequiredError="API key is required!" DebounceInterval="5"
+                                      Validation="@(new Func<string?, Task<string?>>(ValidateKeyAsync))" />
+                    </MudForm>
+                </MudStack>
+            </MudCardContent>
+            <MudCardActions Class="justify-center">
+                <MudButton Color="Color.Primary" Variant="Variant.Filled" Disabled=@(!_success) FullWidth="true" OnClick="@Submit">
+                    <Conditional Expression="@_processing">
+                        <TrueContent>
+                            <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                            <MudText Class="ms-2">Validating</MudText>
+                        </TrueContent>
+                        <FalseContent>
+                            <MudText>Enter</MudText>
+                        </FalseContent>
+                    </Conditional>
+                </MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudFocusTrap>
+</MudContainer>
+
+@code {
+    [EditorRequired][Parameter] public EventCallback<User> OnSuccess { get; set; }
+
+    private bool _success;
+    private bool _processing;
+
+    private MudForm? _form;
+    private TornUser? _user;
+
+    private async Task Submit()
+    {
+        var token = await TokenStore.GetTokenAsync();
+
+        if (token is null) return;
+
+        var user = new User(_user!.Player_Id, _user!.Name, _user!.Faction, token)
+        {
+            State = _user.Status,
+            ActivityStatus = _user.Last_Action
+        };
+
+        await OnSuccess.InvokeAsync(user);
+    }
+
+    private async Task<string?> ValidateKeyAsync(string? arg)
+    {
+        if (arg is null) return null;
+
+        _processing = true;
+
+        await TokenStore.SetTokenAsync(arg);
+
+        _user = await ApiService.GetCurrentUserAsync();
+
+        _processing = false;
+
+        return _user is null 
+            ? "The key provided is invalid" 
+            : null;
+    }
+}

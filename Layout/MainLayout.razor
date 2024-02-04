@@ -1,9 +1,19 @@
 ﻿@inherits LayoutComponentBase
 
 <MudThemeProvider IsDarkMode="true"/>
-<MudDialogProvider/>
 <MudSnackbarProvider/>
 
 <MudLayout>
-    <AppBar/>
+    <Conditional Expression="@(CurrentUser is not null)">
+        <TrueContent>
+            <AppBar />
+        </TrueContent>
+        <FalseContent>
+            <SignIn OnSuccess="@( (user) => CurrentUser = user)" />
+        </FalseContent>
+    </Conditional>
 </MudLayout>
+
+@code{
+    private User? CurrentUser { get; set; }
+}

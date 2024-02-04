@@ -1,0 +1,21 @@
+﻿﻿@if (Expression is true)
+{
+    @TrueContent
+}
+else
+{
+    @FalseContent
+}
+
+@code {
+    [EditorRequired]
+    [Parameter] 
+    public required bool Expression { get; set; }
+    
+    [EditorRequired]
+    [Parameter] 
+    public required RenderFragment TrueContent { get; set; }
+    
+    [Parameter] 
+    public RenderFragment? FalseContent { get; set; }
+}
