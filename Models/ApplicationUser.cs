@@ -1,10 +1,10 @@
 ﻿namespace C3.Models;
 
-public sealed class User(int userId, string userName, TornFaction userFaction, string token)
+public sealed class ApplicationUser(int userId, string userName, TornUserFaction userFaction, string token)
 {
     public int UserId { get; } = userId;
     public string UserName { get; } = userName;
-    public TornFaction Faction { get; } = userFaction;
+    public TornUserFaction Faction { get; } = userFaction;
     public string UserToken { get; } = token;
 
     public UserStatus ActivityStatus { get; set; }

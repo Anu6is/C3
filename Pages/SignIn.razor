@@ -32,7 +32,7 @@
 </MudContainer>
 
 @code {
-    [EditorRequired][Parameter] public EventCallback<User> OnSuccess { get; set; }
+    [EditorRequired][Parameter] public EventCallback<ApplicationUser> OnSuccess { get; set; }
 
     private bool _success;
     private bool _processing;
@@ -46,7 +46,7 @@
 
         if (token is null) return;
 
-        var user = new User(_user!.Player_Id, _user!.Name, _user!.Faction, token)
+        var user = new ApplicationUser(_user!.Player_Id, _user!.Name, _user!.Faction, token)
         {
             State = _user.Status,
             ActivityStatus = _user.Last_Action
@@ -69,6 +69,8 @@
 
         return _user is null 
             ? "The key provided is invalid" 
-            : null;
+            : _user.Faction.Faction_Id == 0 
+                ? "You don't belong to a Faction" 
+                : null;
     }
 }

@@ -1,6 +1,6 @@
 ﻿namespace C3.Models;
 
-public sealed record TornUser(int Level, int Player_Id, string Name, TornUserState Status, TornUserActivity Last_Action, TornFaction Faction) { }
+public sealed record TornUser(int Level, int Player_Id, string Name, TornUserState Status, TornUserActivity Last_Action, TornUserFaction Faction) { }
 
 public sealed record TornUserState(string Description, string State, int Until)
 {
