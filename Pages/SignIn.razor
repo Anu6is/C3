@@ -8,7 +8,7 @@
                 <MudStack Row=true AlignItems="AlignItems.Center" Justify="Justify.SpaceEvenly" Style="width:100%">
                     <MudImage Src="./icon-512.png" ObjectFit="ObjectFit.ScaleDown" ObjectPosition="ObjectPosition.Center" Style="max-width:calc(min(20vw, 150px))" />
                     <MudForm @ref="@_form" @bind-IsValid="@_success" Class="mt-n8" Style="min-width:150px;" ValidationDelay="0">
-                        <MudTextField T="string" Label="Torn API Key" HelperText="Paste your API key" InputType="InputType.Password"
+                        <MudTextField T="string" Label="Torn API Key" HelperText="Enter your API key" InputType="InputType.Password"
                                       Immediate="true" Required="true" RequiredError="API key is required!" DebounceInterval="5"
                                       Validation="@(new Func<string?, Task<string?>>(ValidateKeyAsync))" />
                     </MudForm>

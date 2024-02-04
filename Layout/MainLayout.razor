@@ -1,6 +1,6 @@
 ﻿@inherits LayoutComponentBase
 
-<MudThemeProvider IsDarkMode="true"/>
+<MudThemeProvider IsDarkMode="true" Theme="@Theme"/>
 <MudSnackbarProvider/>
 
 <MudLayout>
@@ -16,4 +16,13 @@
 
 @code{
     private ApplicationUser? CurrentUser { get; set; }
+
+    private MudTheme Theme { get; } = new() 
+    { 
+        PaletteDark = new PaletteDark()
+        {
+            Primary = Colors.Grey.Darken2,
+            Secondary = Colors.Grey.Darken3
+        }
+    };
 }
