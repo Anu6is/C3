@@ -1,8 +1,8 @@
-﻿﻿@if (Expression is true)
+﻿﻿@if (When && Expression is true)
 {
     @TrueContent
 }
-else
+else if (When)
 {
     @FalseContent
 }
@@ -11,11 +11,14 @@ else
     [EditorRequired]
     [Parameter] 
     public required bool Expression { get; set; }
-    
+
     [EditorRequired]
     [Parameter] 
     public required RenderFragment TrueContent { get; set; }
-    
+
     [Parameter] 
     public RenderFragment? FalseContent { get; set; }
+
+    [Parameter]
+    public bool When { get; set; } = true;
 }

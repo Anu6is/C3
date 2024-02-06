@@ -1,0 +1,38 @@
+﻿@inject TornApiService ApiService
+@inject BrowserStorageService BrowserStore
+
+<CascadingValue Value="@this">
+    @ChildContent
+</CascadingValue>
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    [EditorRequired][Parameter] public required ApplicationUser? CurrentUser { get; set; }
+    [EditorRequired][Parameter] public required WarSession WarSession { get; set; }
+
+    public TornFaction? UserFaction { get; set; }
+    public TornFaction? RivalFaction { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var factionId = CurrentUser!.Faction.Faction_Id;
+
+        UserFaction = await ApiService.GetFactionAsync(factionId);
+
+        if (UserFaction is null) return;
+
+        if (UserFaction.Ranked_Wars.Count != 0)
+        {
+            WarSession.StartTime = UserFaction!.Ranked_Wars.First().Value.War.Start;
+
+            var rivalId = UserFaction.Ranked_Wars.First().Value.Factions.First(x => x.Key != factionId).Key;
+
+            RivalFaction = await ApiService.GetFactionAsync(rivalId);
+        }
+
+        await BrowserStore.SaveSessionAsync(WarSession);
+
+        await base.OnInitializedAsync();
+    }
+}

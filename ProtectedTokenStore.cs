@@ -6,7 +6,7 @@ public class ProtectedTokenStore(ICryptoService Crypto)
 {
     public const string Key = "c3KEY.torn.ranked.war.tracker_ccc";
 
-    public string? EncryptedToken { get; set; }
+    public static string? EncryptedToken { get; set; }
 
     public async Task SetTokenAsync(string apiKey)
     {
@@ -16,4 +16,11 @@ public class ProtectedTokenStore(ICryptoService Crypto)
     }
 
     public async Task<string?> GetTokenAsync() => EncryptedToken is null ? null : await Crypto.DecryptAsync(EncryptedToken);
+
+    public async Task<string?> RefreshTokenAsync(string? token)
+    {
+        EncryptedToken = token;
+
+        return await GetTokenAsync();
+    }
 }

@@ -1,21 +1,70 @@
 ﻿@inherits LayoutComponentBase
 
+@inject WarSession WarSession
+@inject TornApiService ApiService
+@inject ProtectedTokenStore TokenStore
+@inject BrowserStorageService SessionStore;
+
 <MudThemeProvider IsDarkMode="true" Theme="@Theme"/>
 <MudSnackbarProvider/>
 
 <MudLayout>
-    <Conditional Expression="@(CurrentUser is not null)">
+    <Conditional Expression="@(CurrentUser is not null)" When="_initialized">
         <TrueContent>
-            <AppBar />
+            <WarData CurrentUser="@CurrentUser" WarSession="@WarSession">
+                <AppBar Username="@CurrentUser!.Username" FactionName="@CurrentUser!.Faction.Faction_Name" StartTime="@WarSession.StartTime" />
+                <MudMainContent Style="height:100vh;">
+                    <MudContainer Class="mt-4" MaxWidth="MaxWidth.Large">
+                        @Body
+                    </MudContainer>
+                </MudMainContent>
+            </WarData>
         </TrueContent>
         <FalseContent>
-            <SignIn OnSuccess="@( (user) => CurrentUser = user)" />
+            <SignIn OnSuccess="@SuccessfulSignin" />
         </FalseContent>
     </Conditional>
 </MudLayout>
 
 @code{
+    private bool _initialized;
     private ApplicationUser? CurrentUser { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        CurrentUser = await GetCurrentUserAsync();
+
+        _initialized = true;
+
+        await base.OnInitializedAsync();
+    }
+
+    private async Task<ApplicationUser?> GetCurrentUserAsync()
+    {
+        WarSession = await SessionStore.GetUserSessionAsync();
+
+        if (WarSession.EncryptedToken is null) return null;
+
+        var token = await TokenStore.RefreshTokenAsync(WarSession.EncryptedToken);
+
+        if (token is null) return null;
+
+        var user = await ApiService.GetCurrentUserAsync();
+
+        if (user?.Name is null) return null;
+
+        return new ApplicationUser(user!.Player_Id, user!.Name, user!.Faction, token)
+        {
+            State = user.Status,
+            ActivityStatus = user.Last_Action
+        };
+    }
+
+    private void SuccessfulSignin(ApplicationUser user)
+    {
+        WarSession.EncryptedToken = ProtectedTokenStore.EncryptedToken;
+        CurrentUser = user;
+    }
 
     private MudTheme Theme { get; } = new() 
     { 

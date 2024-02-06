@@ -1,4 +1,5 @@
 using Blazor.SubtleCrypto;
+using Blazored.SessionStorage;
 using C3;
 using C3.Services;
 using Microsoft.AspNetCore.Components.Web;
@@ -12,8 +13,11 @@ builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
 builder.Services.AddMudServices();
+builder.Services.AddBlazoredSessionStorage();
 
+builder.Services.AddSingleton<WarSession>();
 builder.Services.AddScoped<ProtectedTokenStore>();
+builder.Services.AddScoped<BrowserStorageService>();
 
 builder.Services.AddSubtleCrypto(options => options.Key = ProtectedTokenStore.Key);
 
