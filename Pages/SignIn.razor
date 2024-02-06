@@ -3,7 +3,7 @@
 
 <MudContainer Class="d-flex flex-column justify-center" MaxWidth="MaxWidth.Small" Style="height:100vh;">
     <MudFocusTrap>
-        <MudCard Class="pa-8" Elevation="2">
+        <MudCard Class="pa-8" Elevation="2" @onkeydown="@KeyboardEventHandler">
             <MudCardContent Class="d-flex justify-center">
                 <MudStack Row=true AlignItems="AlignItems.Center" Justify="Justify.SpaceEvenly" Style="width:100%">
                     <MudImage Src="./icon-512.png" ObjectFit="ObjectFit.ScaleDown" ObjectPosition="ObjectPosition.Center" Style="max-width:calc(min(20vw, 150px))" />
@@ -16,15 +16,7 @@
             </MudCardContent>
             <MudCardActions Class="justify-center">
                 <MudButton Color="Color.Primary" Variant="Variant.Filled" Disabled=@(!_success) FullWidth="true" OnClick="@Submit">
-                    <Conditional Expression="@_processing">
-                        <TrueContent>
-                            <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
-                            <MudText Class="ms-2">Validating</MudText>
-                        </TrueContent>
-                        <FalseContent>
-                            <MudText>Enter</MudText>
-                        </FalseContent>
-                    </Conditional>
+                    <MudText>Enter</MudText>
                 </MudButton>
             </MudCardActions>
         </MudCard>
@@ -32,13 +24,16 @@
 </MudContainer>
 
 @code {
-    [EditorRequired][Parameter] public EventCallback<ApplicationUser> OnSuccess { get; set; }
+    [EditorRequired][Parameter] public EventCallback<ApplicationUser?> OnSuccess { get; set; }
 
     private bool _success;
-    private bool _processing;
-
     private MudForm? _form;
     private TornUser? _user;
+
+    private async Task KeyboardEventHandler(KeyboardEventArgs args)
+    {
+        if (args.Key.Equals("Enter") && _success) await Submit();
+    }
 
     private async Task Submit()
     {
@@ -59,15 +54,11 @@
     {
         if (arg is null) return null;
 
-        _processing = true;
-
         await TokenStore.SetTokenAsync(arg);
 
         _user = await ApiService.GetCurrentUserAsync();
 
-        _processing = false;
-
-        return _user is null 
+        return _user is null || _user.Name is null
             ? "The key provided is invalid" 
             : _user.Faction.Faction_Id == 0 
                 ? "You don't belong to a Faction" 

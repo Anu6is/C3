@@ -3,7 +3,7 @@
 public sealed class ApplicationUser(int userId, string userName, TornUserFaction userFaction, string token)
 {
     public int UserId { get; } = userId;
-    public string UserName { get; } = userName;
+    public string Username { get; } = userName;
     public TornUserFaction Faction { get; } = userFaction;
     public string UserToken { get; } = token;
 
@@ -25,4 +25,5 @@ public enum UserState
     Hospitialized,
     Traveling,
     Abroad,
+    Jail
 }

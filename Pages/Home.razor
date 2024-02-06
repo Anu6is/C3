@@ -1,7 +1,168 @@
 ﻿@page "/"
 
-<PageTitle>Home</PageTitle>
+@implements IDisposable
 
-<h1>Hello, world!</h1>
+@inject BrowserStorageService BrowserStore
 
-Welcome to your new app.
+<Conditional Expression="@(Data?.RivalFaction is null)">
+    <TrueContent>
+        <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="4" Style="width:100%; height:80vh">
+            <MudProgressCircular Color="Color.Default" Indeterminate="true" />
+        </MudStack>
+    </TrueContent>
+    <FalseContent>
+        <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="4" Style="width:100%">
+            <MudPaper Class="mud-primary pa-4" Width="350px" Height="120px">
+                <MudStack AlignItems="AlignItems.Center" Spacing="1">
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Style="width:50%">
+                        <MudText Typo="Typo.h6">@FactionTag(Data!.UserFaction!)</MudText>
+                        <MudText Typo="Typo.caption">vs</MudText>
+                        <MudText Typo="Typo.h6">@FactionTag(Data!.RivalFaction!)</MudText>
+                    </MudStack>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Style="width:100%;">
+                        <MudAvatar Size="Size.Small"><MudImage Src=@($"https://factiontags.torn.com/{Data!.UserFaction!.Tag_Image}") /></MudAvatar>
+                        <MudProgressLinear Class="mx-4" Color="Color.Info" Size="Size.Large" Rounded="true" Max="@WarTarget" Value="@WarProgress" />
+                        <MudAvatar Size="Size.Small"><MudImage Src=@($"https://factiontags.torn.com/{Data?.RivalFaction?.Tag_Image}") /></MudAvatar>
+                    </MudStack>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Style="width:50%">
+                        <MudText Typo="Typo.h6">@FactionScore(Data!.UserFaction!)</MudText>
+                        <MudText Typo="Typo.h6">@FactionScore(Data!.RivalFaction!)</MudText>
+                    </MudStack>
+                </MudStack>
+            </MudPaper>
+            <MudDataGrid T="KeyValuePair<int, TornFactionMember>" Items="@Data?.RivalFaction?.Members" Style="width:100%;" Height="60vh"
+                            Dense="true" FixedHeader="true" FixedFooter="true" MultiSelection="false">
+                <Columns>
+                    <PropertyColumn Property="@(x => x.Key)" Hidden="true" />
+                    <TemplateColumn Title="Name">
+                        <CellTemplate>
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Style="width:200px;">
+                                <MudBadge Class="pl-4" Color="@(StatusColor(context.Item.Value.Last_Action.Status))" Overlap="false" Origin="Origin.CenterLeft" Dot="true">
+                                    <MudLink Color="Color.Info" Href="@($"https://www.torn.com/profiles.php?XID={@context.Item.Key}")" Target="_blank">
+                                        @context.Item.Value.Name
+                                    </MudLink>
+                                </MudBadge>
+                                <MudIconButton Icon="@Icons.Material.Filled.LocationSearching" Color="Color.Error" Size="Size.Small" Title="Attack"
+                                               Href="@($"https://www.torn.com/loader.php?sid=attack&user2ID={@context.Item.Key}")"
+                                               Target="_blank"/>
+                            </MudStack>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <PropertyColumn Property="@(x => x.Value.Level)" />
+                    <TemplateColumn Title="Total Stats">
+                        <CellTemplate>
+                            <MudTooltip Color="Color.Primary" Arrow="true" Placement="Placement.Top">
+                                <ChildContent>
+                                    <MudText>Battle Stats</MudText>
+                                </ChildContent>
+                                <TooltipContent>
+                                    <MudText Typo="Typo.caption">Strength:</MudText><br/>
+                                    <MudText Typo="Typo.caption">Defense:</MudText><br />
+                                    <MudText Typo="Typo.caption">Speed:</MudText><br />
+                                    <MudText Typo="Typo.caption">Dexterity:</MudText>
+                                </TooltipContent>
+                            </MudTooltip>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="State">
+                        <CellTemplate>
+                            <MudChip Color="@StateColor(context.Item.Value.Status.State)" Text="@context.Item.Value.Status.State" Size="Size.Small"/>
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Until">
+                        <CellTemplate>
+                           <Countdown Seconds="@context.Item.Value.Status.Until" />
+                        </CellTemplate>
+                    </TemplateColumn>
+                    <TemplateColumn Title="Monitor">
+                        <CellTemplate>
+                            <MudToggleIconButton Variant="Variant.Filled" Toggled="@(Data!.WarSession.FactionTargets.Contains(context.Item.Key))"
+                                                 Title="Monitor" ToggledTitle="Ignore"
+                                                 Size="Size.Small" ToggledSize="Size.Small"
+                                                 Color="Color.Default" ToggledColor="Color.Error" 
+                                                 ToggledChanged="@(async (x) => await ToggleMonitoringAsync(x, context.Item.Key))"
+                                                 Icon="@Icons.Material.Filled.CrisisAlert" ToggledIcon="@Icons.Material.Filled.CrisisAlert" />
+                        </CellTemplate>
+                    </TemplateColumn>
+                </Columns>
+                <PagerContent>
+                    <MudDataGridPager T="KeyValuePair<int, TornFactionMember>" />
+                </PagerContent>
+            </MudDataGrid>
+        </MudStack>
+    </FalseContent>
+</Conditional>
+
+@code {
+    [CascadingParameter] WarData? Data { get; set; }
+
+    public int WarProgress { get; set; } = 40; //TODO - testing only
+    public double WarTarget => (double)Data!.UserFaction!.Ranked_Wars.Values.First().War.Target;
+
+    private string FactionTag(TornFaction faction)
+    {
+        if (!string.IsNullOrWhiteSpace(faction.Tag)) return faction.Tag;
+
+        var firstCharacters = faction.Name.Split(' ')
+                                          .Where(word => !string.IsNullOrEmpty(word))
+                                          .Select(word => word[0])
+                                          .ToArray();
+
+        return new string(firstCharacters);
+    }
+
+    private double FactionScore(TornFaction faction)
+    {
+        if (faction.Ranked_Wars.Count == 0) return 0;
+
+        var score = faction.Ranked_Wars!.First().Value.Factions.First(x => x.Key == faction.Id).Value.Score;
+
+        return (double)score;
+    }
+
+    private Color StatusColor(string status) => status switch
+    {
+        "Online" => Color.Success,
+        "Idle" => Color.Warning,
+        _ => Color.Default
+    };
+
+    private Color StateColor(string state) => state switch
+    {
+        "Okay" => Color.Success,
+        "Jail" => Color.Warning,
+        "Hospital" => Color.Error,
+        _ => Color.Info
+    };
+
+    private async Task ToggleMonitoringAsync(bool monitor, int userId)
+    {
+        if (monitor)
+            Data!.WarSession.FactionTargets.Add(userId);
+        else
+            Data!.WarSession.FactionTargets.Remove(userId);
+
+        await BrowserStore.SaveSessionAsync(Data.WarSession);
+    }
+
+    public async Task TrackProgressAsync() //TODO actual implementation
+    {
+        WarProgress = 0;
+        do
+        {
+            if (_disposed) return;
+
+            WarProgress += 4;
+
+            StateHasChanged();
+            
+            await Task.Delay(500);
+
+        } while (WarProgress < 100);
+
+        _ = TrackProgressAsync();
+    }
+
+    bool _disposed;
+    public void Dispose() => _disposed = true;
+}

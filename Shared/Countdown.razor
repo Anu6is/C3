@@ -1,0 +1,44 @@
+﻿<MudText Typo="Typo.subtitle2">@_remaining</MudText>
+
+@code {
+    [EditorRequired][Parameter] public required ulong Seconds { get; set; }
+    [Parameter] public bool Increasing { get; set; }
+
+    private PeriodicTimer Timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+    private string _remaining = string.Empty;
+
+    protected override Task OnInitializedAsync()
+    {
+        _ = RemainingTimeAsync();
+
+        return base.OnInitializedAsync();
+    }
+
+    private async Task RemainingTimeAsync()
+    {
+        while(await Timer.WaitForNextTickAsync())
+        {
+
+            if (Seconds == 0 && !Increasing)
+            {
+                Timer.Dispose();
+                return;
+            }
+
+            var timeUntil = DateTime.UnixEpoch.AddSeconds(Seconds);
+
+            var remaining = timeUntil - DateTime.UtcNow;
+
+            if (remaining < TimeSpan.Zero && !Increasing)
+            {
+                _remaining = string.Empty;
+                Timer.Dispose();
+            }
+            else
+            {
+                _remaining = remaining.ToString(@"dd\.hh\:mm\:ss");
+                StateHasChanged();
+            }
+        }
+    }
+}

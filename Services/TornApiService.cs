@@ -14,13 +14,13 @@ public sealed class TornApiService(HttpClient httpClient, ProtectedTokenStore To
         return await httpClient.GetFromJsonAsync<TornUser>(Endpoints.User().Profile().WithAuthorization(key));
     }
 
-    public async Task<TornFaction?> GetCurrentUserFactionAsync()
+    public async Task<TornFaction?> GetFactionAsync(int factionId)
     {
         var key = await TokenStore.GetTokenAsync();
 
         if (key is null) return null;
 
-        return await httpClient.GetFromJsonAsync<TornFaction>(Endpoints.Faction().WithAuthorization(key));
+        return await httpClient.GetFromJsonAsync<TornFaction>(Endpoints.Faction(factionId).WithAuthorization(key));
     }
 
     public void Dispose() => httpClient.Dispose();

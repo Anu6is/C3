@@ -1,11 +1,21 @@
 ﻿<MudAppBar Elevation="3" Dense="true" Color="Color.Primary">
-    <MudIcon Icon="@Icons.Custom.Brands.MudBlazor" Color="Color.Surface" />
+    <MudText>@FactionName</MudText>
     <MudSpacer />
-
+    <Conditional Expression="@(StartTime > 0)">
+        <TrueContent>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Style="width:275px">
+                <MudText Typo="Typo.subtitle2">Duration:</MudText>
+                <Countdown Seconds="@StartTime" Increasing="true" />
+            </MudStack>
+        </TrueContent>
+    </Conditional>
     <MudSpacer />
-    <MudText>Username</MudText>
+    <MudText>@Username</MudText>
 </MudAppBar>
 
 @code {
-
+    [EditorRequired][Parameter] public required string FactionName { get; set; }
+    [EditorRequired][Parameter] public required string Username { get; set; }
+    
+    [Parameter] public ulong StartTime { get; set; }
 }
