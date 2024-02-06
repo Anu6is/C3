@@ -1,0 +1,66 @@
+﻿<MudPaper Class="mud-primary pa-4" Width="350px" Height="120px">
+    <MudStack AlignItems="AlignItems.Center" Spacing="1">
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Style="width:50%">
+            <MudText Typo="Typo.h6">@FactionTag(Data!.UserFaction!)</MudText>
+            <MudText Typo="Typo.caption">vs</MudText>
+            <MudText Typo="Typo.h6">@FactionTag(Data!.RivalFaction!)</MudText>
+        </MudStack>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Style="width:100%;">
+            <MudAvatar Size="Size.Small"><MudImage Src=@($"{TagUrl}{Data!.UserFaction!.Tag_Image}") /></MudAvatar>
+            <MudProgressLinear Class="mx-4" Color="Color.Info" Size="Size.Large" Rounded="true" Max="@WarTarget" Value="@CurrentLead" />
+            <MudAvatar Size="Size.Small"><MudImage Src=@($"{TagUrl}{Data?.RivalFaction?.Tag_Image}") /></MudAvatar>
+        </MudStack>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Style="width:50%">
+            <MudText Typo="Typo.h6" Color="@(TeamScore > RivalScore ? Color.Success : Color.Error)">@TeamScore</MudText>
+            <MudText Typo="Typo.h6" Color=@(RivalScore > TeamScore ? Color.Success : Color.Error)>@RivalScore</MudText>
+        </MudStack>
+    </MudStack>
+</MudPaper>
+
+    @code {
+    [CascadingParameter] WarData? Data { get; set; }
+
+    private const string TagUrl = "https://factiontags.torn.com/";
+
+    private double TeamScore { get; set; }
+    private double RivalScore { get; set; }
+    public double CurrentLead { get; set; }
+
+    public double WarTarget => (double)Data!.UserFaction!.Ranked_Wars.Values.First().War.Target;
+
+    protected override void OnParametersSet()
+    {
+        TrackProgress();
+
+        base.OnParametersSet();
+    }
+
+    private string FactionTag(TornFaction faction)
+    {
+        if (!string.IsNullOrWhiteSpace(faction.Tag)) return faction.Tag;
+
+        var firstCharacters = faction.Name.Split(' ')
+                                          .Where(word => !string.IsNullOrEmpty(word))
+                                          .Select(word => word[0])
+                                          .ToArray();
+
+        return new string(firstCharacters);
+    }
+
+    private double FactionScore(TornFaction faction)
+    {
+        if (faction.Ranked_Wars.Count == 0) return 0;
+
+        var score = faction.Ranked_Wars!.First().Value.Factions.First(x => x.Key == faction.Id).Value.Score;
+
+        return (double)score;
+    }
+
+    public void TrackProgress()
+    {
+        TeamScore = FactionScore(Data!.UserFaction!);
+        RivalScore = FactionScore(Data!.RivalFaction!);
+
+        CurrentLead = Math.Abs(TeamScore - RivalScore);
+    }
+}
