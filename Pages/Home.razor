@@ -2,88 +2,164 @@
 
 @inject BrowserStorageService BrowserStore
 
-<Conditional Expression="@(Data?.RivalFaction is null)">
-    <TrueContent>
-        <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="4" Style="width:100%; height:80vh">
-            <MudProgressCircular Color="Color.Default" Indeterminate="true" />
-        </MudStack>
-    </TrueContent>
-    <FalseContent>
-        <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="4" Style="width:100%">
-            <WarTracker />
-            <MudDataGrid T="KeyValuePair<int, TornFactionMember>" Items="@RivalMembers" Style="width:100%;" Height="60vh"
-                            Dense="true" FixedHeader="true" FixedFooter="true" MultiSelection="false">
-                <Columns>
-                    <PropertyColumn Property="@(x => x.Key)" Hidden="true" />
-                    <TemplateColumn Title="Name">
-                        <CellTemplate>
-                            <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Style="width:200px;">
-                                <MudBadge Class="pl-4" Color="@(StatusColor(context.Item.Value.Last_Action.Status))" Overlap="false" Origin="Origin.CenterLeft" Dot="true">
-                                    <MudLink Color="Color.Info" Href="@($"https://www.torn.com/profiles.php?XID={@context.Item.Key}")" Target="_blank">
-                                        @context.Item.Value.Name
-                                    </MudLink>
-                                </MudBadge>
-                                <MudIconButton Icon="@Icons.Material.Filled.LocationSearching" Color="Color.Error" Size="Size.Small" Title="Attack"
-                                               Href="@($"https://www.torn.com/loader.php?sid=attack&user2ID={@context.Item.Key}")"
-                                               Target="_blank"/>
-                            </MudStack>
-                        </CellTemplate>
-                    </TemplateColumn>
-                    <PropertyColumn Property="@(x => x.Value.Level)" />
-                    <TemplateColumn Title="Total Stats">
-                        <CellTemplate>
-                            <MudTooltip Color="Color.Primary" Arrow="true" Placement="Placement.Top">
-                                <ChildContent>
-                                    <MudText>Battle Stats</MudText>
-                                </ChildContent>
-                                <TooltipContent>
-                                    <MudText Typo="Typo.caption">Strength:</MudText><br/>
-                                    <MudText Typo="Typo.caption">Defense:</MudText><br />
-                                    <MudText Typo="Typo.caption">Speed:</MudText><br />
-                                    <MudText Typo="Typo.caption">Dexterity:</MudText>
-                                </TooltipContent>
-                            </MudTooltip>
-                        </CellTemplate>
-                    </TemplateColumn>
-                    <TemplateColumn Title="State">
-                        <CellTemplate>
-                            <MudChip Color="@StateColor(context.Item.Value.Status.State)" Text="@context.Item.Value.Status.State" Size="Size.Small"/>
-                        </CellTemplate>
-                    </TemplateColumn>
-                    <TemplateColumn Title="Until">
-                        <CellTemplate>
-                           <Countdown Seconds="@context.Item.Value.Status.Until" />
-                        </CellTemplate>
-                    </TemplateColumn>
-                    <TemplateColumn Title="Monitor">
-                        <CellTemplate>
-                            <MudToggleIconButton Variant="Variant.Filled" Toggled="@(Data!.WarSession.FactionTargets.Contains(context.Item.Key))"
-                                                 Title="Monitor" ToggledTitle="Ignore"
-                                                 Size="Size.Small" ToggledSize="Size.Small"
-                                                 Color="Color.Default" ToggledColor="Color.Error" 
-                                                 ToggledChanged="@(async (x) => await ToggleMonitoringAsync(x, context.Item.Key))"
-                                                 Icon="@Icons.Material.Filled.CrisisAlert" ToggledIcon="@Icons.Material.Filled.CrisisAlert" />
-                        </CellTemplate>
-                    </TemplateColumn>
-                </Columns>
-                <PagerContent>
-                    <MudDataGridPager T="KeyValuePair<int, TornFactionMember>" />
-                </PagerContent>
-            </MudDataGrid>
-        </MudStack>
-    </FalseContent>
-</Conditional>
+<MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="4" Style="width:100%">
+    <WarTracker />
+
+    <MudDataGrid @ref="@_dataGrid" T="KeyValuePair<int, TornFactionMember>" Items="@RivalMembers" Style="width:100%;" Height="60vh" Loading="@(Data?.RivalFaction is null)"
+                 Dense="true" FixedHeader="true" FixedFooter="true" Filterable="true" Hover="true" SortMode="SortMode.Multiple" QuickFilter="@_quickFilter">
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">@Data?.RivalFaction?.Name</MudText>
+            <MudSpacer />
+            <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true" Margin="Margin.Dense"
+                            AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-n4 px-4"></MudTextField>
+            <MudChipSet MultiSelection="true" Filter="true" @bind-SelectedValues="@SelectedValues">
+                <MudChip Text="Okay" Color="Color.Primary" SelectedColor="Color.Success" Label="true" Size="Size.Medium" Style="width:80px" Value="@("Okay")"/>
+                <MudChip Text="Hospital" Color="Color.Primary" SelectedColor="Color.Error" Label="true" Size="Size.Medium" Style="width:80px" Value="@("Hospital")"/>
+            </MudChipSet>
+        </ToolBarContent>
+        <Columns>
+            <PropertyColumn Property="@(x => x.Key)" Hidden="true" />
+            <TemplateColumn Title="Name" SortBy="@(x => x.Value.Name)">
+                <CellTemplate>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Style="width:200px;">
+                        <MudBadge Class="pl-4" Color="@(StatusColor(context.Item.Value.Last_Action.Status))" Overlap="false" Origin="Origin.CenterLeft" Dot="true">
+                            <MudLink Color="Color.Info" Href="@($"https://www.torn.com/profiles.php?XID={@context.Item.Key}")" Target="_blank">
+                                @context.Item.Value.Name
+                            </MudLink>
+                        </MudBadge>
+                        <MudIconButton Icon="@Icons.Material.Filled.LocationSearching" Color="Color.Error" Size="Size.Small" Title="Attack"
+                                       Href="@($"https://www.torn.com/loader.php?sid=attack&user2ID={@context.Item.Key}")"
+                                       Target="_blank"/>
+                    </MudStack>
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="@(x => x.Value.Level)" />
+            <TemplateColumn Title="Total Stats">
+                <CellTemplate>
+                    <MudTooltip Color="Color.Primary" Arrow="true" Placement="Placement.Top">
+                        <ChildContent>
+                            <MudText>Battle Stats</MudText>
+                        </ChildContent>
+                        <TooltipContent>
+                            <MudText Typo="Typo.caption">Strength:</MudText><br/>
+                            <MudText Typo="Typo.caption">Defense:</MudText><br />
+                            <MudText Typo="Typo.caption">Speed:</MudText><br />
+                            <MudText Typo="Typo.caption">Dexterity:</MudText>
+                        </TooltipContent>
+                    </MudTooltip>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="State" Filterable="false" SortBy="@(x => x.Value.Status.State)">
+                <CellTemplate>
+                    <MudChip Color="@StateColor(context.Item.Value.Status.State)" Text="@context.Item.Value.Status.State" Size="Size.Small"/>
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Until" Filterable="false" SortBy="@(x => x.Value.Status.Until)">
+                <CellTemplate>
+                    <Countdown Seconds="@context.Item.Value.Status.Until" />
+                </CellTemplate>
+            </TemplateColumn>
+            <TemplateColumn Title="Monitor" Filterable="false" Sortable="false">
+                <CellTemplate>
+                    <MudToggleIconButton Variant="Variant.Filled" Toggled="@(Data!.WarSession.FactionTargets.Contains(context.Item.Key))"
+                                            Title="Monitor" ToggledTitle="Ignore"
+                                            Size="Size.Small" ToggledSize="Size.Small"
+                                            Color="Color.Default" ToggledColor="Color.Error" 
+                                            ToggledChanged="@(async (x) => await ToggleMonitoringAsync(x, context.Item.Key))"
+                                            Icon="@Icons.Material.Filled.CrisisAlert" ToggledIcon="@Icons.Material.Filled.CrisisAlert" />
+                </CellTemplate>
+            </TemplateColumn>
+        </Columns>
+        <PagerContent>
+            <MudStack Row="true" Class="pl-8" AlignItems="AlignItems.Center" Style="width:100%">
+                <MudSwitch @bind-Value="@Monitored" Color="Color.Error">Monitored Only</MudSwitch>
+                <MudSpacer/>
+                <MudDataGridPager T="KeyValuePair<int, TornFactionMember>" />
+            </MudStack>
+        </PagerContent>
+    </MudDataGrid>
+</MudStack>
 
 @code {
     [CascadingParameter] WarData? Data { get; set; }
 
+    private MudDataGrid<KeyValuePair<int, TornFactionMember>>? _dataGrid;
     private Dictionary<int, TornFactionMember> RivalMembers = [];
+
+    private static bool _monitored;
+    private static string? _searchString;
+    private static ICollection<object> _selectedValues = [];
+
+    private ICollection<object> SelectedValues 
+    {
+        get => _selectedValues;
+        set
+        {
+            _selectedValues = value;
+
+            UpdateTableView();
+        }
+    }
+
+    private bool Monitored 
+    { 
+        get => _monitored; 
+        set
+        {
+            _monitored = value;
+
+            UpdateTableView();
+        } 
+    }
+
+    private Func<KeyValuePair<int, TornFactionMember>, bool> _quickFilter => pair =>
+    {
+        _searchString = _searchString?.Trim();
+
+        if (string.IsNullOrWhiteSpace(_searchString) || _searchString.Length < 3) return true;
+
+        if (pair.Value.FilterByStatus(_searchString)) return true;
+
+        if (pair.Value.FilterByName(_searchString)) return true;
+
+        if (pair.Value.FilterByLevel(_searchString)) return true;
+
+        return false;
+    };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender is false) return;
+
+        await _dataGrid!.SetSortAsync("Level", SortDirection.Descending, x => x.Value.Level);
+
+        await base.OnAfterRenderAsync(firstRender);
+    }
 
     protected override void OnParametersSet()
     {
-        RivalMembers = Data?.RivalFaction?.Members ?? [];
+        UpdateTableView();
 
         base.OnParametersSet();
+    }
+
+    private void UpdateTableView()
+    {
+        if (Data?.RivalFaction is null) return;
+
+        if (SelectedValues?.Count > 0)
+        {
+            RivalMembers = Data.RivalFaction.Members
+                                                .Where(x => SelectedValues.Any(v => v.ToString() == x.Value.Status.State))
+                                                .Where(x => Monitored ? Data.WarSession.FactionTargets.Contains(x.Key) : true)
+                                                .ToDictionary<int, TornFactionMember>();
+        }
+        else
+        {
+            RivalMembers = Data.RivalFaction.Members
+                                            .Where(x => Monitored ? Data.WarSession.FactionTargets.Contains(x.Key) : true)
+                                            .ToDictionary<int, TornFactionMember>();
+        }
     }
 
     private Color StatusColor(string status) => status switch
