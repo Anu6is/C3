@@ -3,19 +3,29 @@
     <MudSpacer />
     <Conditional Expression="@(StartTime > 0)">
         <TrueContent>
-            <MudStack Row="true" AlignItems="AlignItems.Center" Style="width:275px">
-                <MudText Typo="Typo.subtitle2">Duration:</MudText>
-                <Countdown Seconds="@StartTime" Increasing="true" />
-            </MudStack>
+            <Conditional Expression="@(Winner is null)">
+                <TrueContent>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Style="width:275px">
+                        <MudText Typo="Typo.subtitle2">Duration:</MudText>
+                        <Countdown Seconds="@StartTime" Increasing="true" />
+                    </MudStack>
+                </TrueContent>
+                <FalseContent>
+                    <MudStack Row="true" AlignItems="AlignItems.Center" Style="min-width:300px">
+                        <MudText Typo="Typo.h6">@($"Winner: {Winner}")</MudText>
+                    </MudStack>
+                </FalseContent>
+            </Conditional>
         </TrueContent>
     </Conditional>
     <MudSpacer />
     <MudText>@Username</MudText>
 </MudAppBar>
 
-@code {
+    @code {
     [EditorRequired][Parameter] public required string FactionName { get; set; }
     [EditorRequired][Parameter] public required string Username { get; set; }
-    
+
     [Parameter] public ulong StartTime { get; set; }
+    [Parameter] public string? Winner { get; set; }
 }

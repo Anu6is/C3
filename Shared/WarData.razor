@@ -8,6 +8,7 @@
 @code {
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
+    [EditorRequired][Parameter] public EventCallback<string> OnWarEnded { get; set; }
     [EditorRequired][Parameter] public required ApplicationUser? CurrentUser { get; set; }
     [EditorRequired][Parameter] public required WarSession WarSession { get; set; }
 
@@ -41,11 +42,15 @@
                 RivalFaction = await ApiService.GetFactionAsync(rivalId);
             }
 
+            var war = UserFaction!.Ranked_Wars.First().Value.War;
+
             if (WarSession.StartTime == 0)
             {
-                WarSession.StartTime = UserFaction!.Ranked_Wars.First().Value.War.Start;
+                WarSession.StartTime = war.Start;
                 await BrowserStore.SaveSessionAsync(WarSession);
             }
+
+            if (war.End > 0) Timer.Dispose();
 
             StateHasChanged();
         }

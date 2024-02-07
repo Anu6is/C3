@@ -42,17 +42,17 @@
         if (token is null) return;
 
         var user = new ApplicationUser(_user!.Player_Id, _user!.Name, _user!.Faction, token)
-        {
-            State = _user.Status,
-            ActivityStatus = _user.Last_Action
-        };
+            {
+                State = _user.Status,
+                ActivityStatus = _user.Last_Action
+            };
 
         await OnSuccess.InvokeAsync(user);
     }
 
     private async Task<string?> ValidateKeyAsync(string? arg)
     {
-        if (arg is null) return null;
+        if (string.IsNullOrWhiteSpace(arg)) return null;
 
         await TokenStore.SetTokenAsync(arg);
 

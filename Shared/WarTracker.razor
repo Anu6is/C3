@@ -1,24 +1,32 @@
-﻿<MudPaper Class="mud-primary pa-4" Width="350px" Height="120px">
-    <MudStack AlignItems="AlignItems.Center" Spacing="1">
-        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Style="width:50%">
-            <MudText Typo="Typo.h6">@FactionTag(Data!.UserFaction!)</MudText>
-            <MudText Typo="Typo.caption">vs</MudText>
-            <MudText Typo="Typo.h6">@FactionTag(Data!.RivalFaction!)</MudText>
-        </MudStack>
-        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Style="width:100%;">
-            <MudAvatar Size="Size.Small"><MudImage Src=@($"{TagUrl}{Data!.UserFaction!.Tag_Image}") /></MudAvatar>
-            <MudProgressLinear Class="mx-4" Color="Color.Info" Size="Size.Large" Rounded="true" Max="@WarTarget" Value="@CurrentLead" />
-            <MudAvatar Size="Size.Small"><MudImage Src=@($"{TagUrl}{Data?.RivalFaction?.Tag_Image}") /></MudAvatar>
-        </MudStack>
-        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Style="width:50%">
-            <MudText Typo="Typo.h6" Color="@(TeamScore > RivalScore ? Color.Success : Color.Error)">@TeamScore</MudText>
-            <MudText Typo="Typo.h6" Color=@(RivalScore > TeamScore ? Color.Success : Color.Error)>@RivalScore</MudText>
-        </MudStack>
-    </MudStack>
-</MudPaper>
+﻿<Conditional Expression="@(Data?.RivalFaction is null)">
+    <TrueContent>
+        <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="350px" Height="120px" Animation="Animation.Wave" />
+    </TrueContent>
+    <FalseContent>
+        <MudPaper Class="mud-primary pa-4" Width="350px" Height="120px">
+            <MudStack AlignItems="AlignItems.Center" Spacing="1">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Style="width:50%">
+                    <MudText Typo="Typo.h6">@FactionTag(Data!.UserFaction!)</MudText>
+                    <MudText Typo="Typo.caption">vs</MudText>
+                    <MudText Typo="Typo.h6">@FactionTag(Data!.RivalFaction!)</MudText>
+                </MudStack>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Style="width:100%;">
+                    <MudAvatar Size="Size.Small"><MudImage Src=@($"{TagUrl}{Data!.UserFaction!.Tag_Image}") /></MudAvatar>
+                    <MudProgressLinear Class="mx-4" Color="Color.Info" Size="Size.Large" Rounded="true" Max="@WarTarget" Value="@CurrentLead" />
+                    <MudAvatar Size="Size.Small"><MudImage Src=@($"{TagUrl}{Data?.RivalFaction?.Tag_Image}") /></MudAvatar>
+                </MudStack>
+                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Style="width:50%">
+                    <MudText Typo="Typo.h6" Color="@(TeamScore > RivalScore ? Color.Success : Color.Error)">@TeamScore.ToString("#,0")</MudText>
+                    <MudText Typo="Typo.h6" Color=@(RivalScore > TeamScore ? Color.Success : Color.Error)>@RivalScore.ToString("#,0")</MudText>
+                </MudStack>
+            </MudStack>
+        </MudPaper>
+    </FalseContent>
+</Conditional>
 
-    @code {
-    [CascadingParameter] WarData? Data { get; set; }
+
+@code {
+    [CascadingParameter] public WarData? Data { get; set; }
 
     private const string TagUrl = "https://factiontags.torn.com/";
 
@@ -30,6 +38,8 @@
 
     protected override void OnParametersSet()
     {
+        if (Data?.RivalFaction is null) return;
+
         TrackProgress();
 
         base.OnParametersSet();
@@ -56,11 +66,22 @@
         return (double)score;
     }
 
+    private TornFactionWarScore? _winner;
+
     public void TrackProgress()
-    {
+    {        
         TeamScore = FactionScore(Data!.UserFaction!);
         RivalScore = FactionScore(Data!.RivalFaction!);
 
         CurrentLead = Math.Abs(TeamScore - RivalScore);
+
+        var war = Data.UserFaction!.Ranked_Wars.First().Value;
+
+        if (_winner is null && war.War.End > 0)
+        {
+            _winner = war.Factions[war.War.Winner];
+
+            Data.OnWarEnded.InvokeAsync(_winner.Name);
+        };
     }
 }
