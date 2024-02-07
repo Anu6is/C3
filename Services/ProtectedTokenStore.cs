@@ -1,6 +1,6 @@
 ﻿using Blazor.SubtleCrypto;
 
-namespace C3;
+namespace C3.Services;
 
 public class ProtectedTokenStore(ICryptoService Crypto)
 {
