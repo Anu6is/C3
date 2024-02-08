@@ -127,6 +127,13 @@
         return false;
     };
 
+    protected override Task OnInitializedAsync()
+    {
+        _ = Data?.MonitorWarProgressAsync();
+
+        return base.OnInitializedAsync();
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender is false) return;

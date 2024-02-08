@@ -2,7 +2,29 @@
 @inject BrowserStorageService BrowserStore
 
 <CascadingValue Value="@this">
-    @ChildContent
+    <Conditional Expression="@_initialized">
+        <TrueContent>
+            <Conditional Expression="@(UserFaction?.Ranked_Wars.Count != 0)">
+                <TrueContent>
+                    @ChildContent
+                </TrueContent>
+                <FalseContent>
+                    <MudContainer Class="d-flex flex-column justify-center" MaxWidth="MaxWidth.Small" Style="height:100vh;">
+                        <MudCard Class="pa-8" Elevation="2">
+                            <MudCardContent Class="d-flex justify-center">
+                                <MudText Style="text-align:center" Typo="Typo.h3">YOUR FACTION IS NOT IN A WAR</MudText>
+                            </MudCardContent>
+                        </MudCard>
+                    </MudContainer>
+                </FalseContent>
+            </Conditional>
+        </TrueContent>
+        <FalseContent>
+            <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="4" Style="width:100%; height:80vh">
+                <MudProgressCircular Color="Color.Default" Indeterminate="true" />
+            </MudStack>
+        </FalseContent>
+    </Conditional>
 </CascadingValue>
 
 @code {
@@ -12,7 +34,7 @@
     [EditorRequired][Parameter] public required ApplicationUser? CurrentUser { get; set; }
     [EditorRequired][Parameter] public required WarSession WarSession { get; set; }
 
-    private Task _monitor = null!;
+    private bool _initialized;
     private PeriodicTimer Timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
 
     public TornFaction? UserFaction { get; set; }
@@ -20,37 +42,42 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _monitor = MonitorWarProgressAsync();
+        await GetWarDetailsAsync();
 
         await base.OnInitializedAsync();
     }
 
-    private async Task MonitorWarProgressAsync()
+    private async Task GetWarDetailsAsync()
     {
         var factionId = CurrentUser!.Faction.Faction_Id;
 
+        UserFaction = await ApiService.GetFactionAsync(factionId);
+
+        if (UserFaction!.Ranked_Wars.Count == 0)
+        {
+            Timer.Dispose();
+        }
+        else
+        {
+            WarSession.StartTime = UserFaction!.Ranked_Wars.First().Value.War.Start;
+
+            await BrowserStore.SaveSessionAsync(WarSession);
+        }
+
+        _initialized = true;
+
+        StateHasChanged();
+    }
+
+    public async Task MonitorWarProgressAsync()
+    {
         while (await Timer.WaitForNextTickAsync())
         {
-            UserFaction = await ApiService.GetFactionAsync(factionId);
+            var rivalId = UserFaction!.Ranked_Wars.First().Value.Factions.First(x => x.Key != UserFaction.Id).Key;
 
-            if (UserFaction is null) return;
+            RivalFaction = await ApiService.GetFactionAsync(rivalId);
 
-            if (UserFaction.Ranked_Wars.Count != 0)
-            {
-                var rivalId = UserFaction.Ranked_Wars.First().Value.Factions.First(x => x.Key != factionId).Key;
-
-                RivalFaction = await ApiService.GetFactionAsync(rivalId);
-            }
-
-            var war = UserFaction!.Ranked_Wars.First().Value.War;
-
-            if (WarSession.StartTime == 0)
-            {
-                WarSession.StartTime = war.Start;
-                await BrowserStore.SaveSessionAsync(WarSession);
-            }
-
-            if (war.End > 0) Timer.Dispose();
+            if (RivalFaction!.Ranked_Wars.First().Value.War.End > 0) Timer.Dispose();
 
             StateHasChanged();
         }
