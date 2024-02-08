@@ -6,6 +6,8 @@ public class Endpoints
 
     public static FactionEndpointBuilder Faction(int factionId = 0) => new(factionId);
 
+    public static FactionSpyEndpointBuilder FactionSpies(int factionId) => new(factionId);
+
     public class UserEndpointBuilder(int userId = 0) : EndpointBuilder
     {
         public override int ResourceId { get; set; } = userId;
@@ -24,6 +26,14 @@ public class Endpoints
         public override string Endpoint => "faction/";
     }
 
+    public class FactionSpyEndpointBuilder(int factionId) : EndpointBuilder
+    {
+        public override int ResourceId { get; set; } = factionId;
+        public override string Endpoint => "/spy/faction/";
+
+        public override string WithAuthorization(string key) => $"{key}{Endpoint}{ResourceId}";
+    }
+
     public abstract class EndpointBuilder
     {
         public abstract string Endpoint { get; }
@@ -31,7 +41,7 @@ public class Endpoints
 
         protected readonly List<string> selections = [];
 
-        public string WithAuthorization(string key)
+        public virtual string WithAuthorization(string key)
             => $"{Endpoint}{(ResourceId == 0 ? "" : ResourceId)}/?selections={string.Join(",", selections)}&key={key}&comment=ConflictCommandCenter";
     }
 

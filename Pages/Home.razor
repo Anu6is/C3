@@ -36,15 +36,16 @@
             <PropertyColumn Property="@(x => x.Value.Level)" />
             <TemplateColumn Title="Total Stats">
                 <CellTemplate>
-                    <MudTooltip Color="Color.Primary" Arrow="true" Placement="Placement.Top">
+                    <MudTooltip Color="Color.Primary" Arrow="true" Placement="Placement.Top" ShowOnFocus="false"
+                                ShowOnClick="@HasStatValues(context.Item.Key)" ShowOnHover="@HasStatValues(context.Item.Key)">
                         <ChildContent>
-                            <MudText>Battle Stats</MudText>
+                            <MudText>@GetBattleStats(context.Item.Key)</MudText>
                         </ChildContent>
                         <TooltipContent>
-                            <MudText Typo="Typo.caption">Strength:</MudText><br/>
-                            <MudText Typo="Typo.caption">Defense:</MudText><br />
-                            <MudText Typo="Typo.caption">Speed:</MudText><br />
-                            <MudText Typo="Typo.caption">Dexterity:</MudText>
+                            <MudText Typo="Typo.caption">@($"Strength: {GetBattleStats(context.Item.Key, "str")}")</MudText><br />
+                            <MudText Typo="Typo.caption">@($"Defense: {GetBattleStats(context.Item.Key, "def")}")</MudText><br />
+                            <MudText Typo="Typo.caption">@($"Speed: {GetBattleStats(context.Item.Key, "spd")}")</MudText><br />
+                            <MudText Typo="Typo.caption">@($"Dexterity: {GetBattleStats(context.Item.Key, "dex")}")</MudText>
                         </TooltipContent>
                     </MudTooltip>
                 </CellTemplate>
@@ -80,7 +81,7 @@
     </MudDataGrid>
 </MudStack>
 
-@code {
+    @code {
     [CascadingParameter] WarData? Data { get; set; }
 
     private MudDataGrid<KeyValuePair<int, TornFactionMember>>? _dataGrid;
@@ -183,6 +184,25 @@
         "Hospital" => Color.Error,
         _ => Color.Info
     };
+
+    private string GetBattleStats(int id, string stat = "Total")
+    {
+        if (Data!.Spies.TryGetValue(id, out var spy) && spy is not null)
+        {           
+            return  stat switch
+            {
+                "str" => spy.Strength == 0 ? "Unknown" : ((double)spy.Strength).ToMetric(),
+                "def" => spy.Defense == 0 ? "Unknown" : ((double)spy.Defense).ToMetric(),
+                "spd" => spy.Speed == 0 ? "Unknown" : ((double)spy.Speed).ToMetric(),
+                "dex" => spy.Dexterity == 0 ? "Unknown" : ((double)spy.Dexterity).ToMetric(),
+                _ => spy.Total == 0 ? "Unknown" : ((double)spy.Total).ToMetric()
+            };
+        };
+
+        return "Unavailable";
+    }
+
+    private bool HasStatValues(int id) => Data!.Spies.TryGetValue(id, out var spy) && spy is not null && spy.Total > 0;
 
     private async Task ToggleMonitoringAsync(bool monitor, int userId)
     {

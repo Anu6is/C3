@@ -1,4 +1,5 @@
 ﻿@inject TornApiService ApiService
+@inject TornStatsApiService StatsService
 @inject BrowserStorageService BrowserStore
 
 <CascadingValue Value="@this">
@@ -39,6 +40,7 @@
 
     public TornFaction? UserFaction { get; set; }
     public TornFaction? RivalFaction { get; set; }
+    public Dictionary<int, Spy> Spies { get; set; } = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -71,10 +73,15 @@
 
     public async Task MonitorWarProgressAsync()
     {
+        var rivalId = UserFaction!.Ranked_Wars.First().Value.Factions.First(x => x.Key != UserFaction.Id).Key;
+
+        var spies = await StatsService.GetFactionSpiesAsync(rivalId);
+
+        if (spies is not null && spies.Status is true)
+            Spies = spies.Faction.Members.Values.ToDictionary(member => member.Id, member => member.Spy);
+
         while (await Timer.WaitForNextTickAsync())
         {
-            var rivalId = UserFaction!.Ranked_Wars.First().Value.Factions.First(x => x.Key != UserFaction.Id).Key;
-
             RivalFaction = await ApiService.GetFactionAsync(rivalId);
 
             if (RivalFaction!.Ranked_Wars.First().Value.War.End > 0) Timer.Dispose();
