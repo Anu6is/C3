@@ -12,6 +12,9 @@
             <MudSpacer />
             <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true" Margin="Margin.Dense"
                             AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-n4 px-4"></MudTextField>
+            <MudToggleIconButton Icon="@Icons.Material.Filled.KeyboardDoubleArrowDown" ToggledIcon="@Icons.Material.Filled.KeyboardDoubleArrowUp"
+                                 Color="@(_hasHigherStats is null ? Color.Default : Color.Success)" ToggledColor="Color.Error"
+                                 Toggled="@(_hasHigherStats ?? false)" ToggledChanged="@OnToggleChanged" />
             <MudChipSet MultiSelection="true" Filter="true" @bind-SelectedValues="@SelectedValues">
                 <MudChip Text="Okay" Color="Color.Primary" SelectedColor="Color.Success" Label="true" Size="Size.Medium" Style="width:80px" Value="@("Okay")"/>
                 <MudChip Text="Hospital" Color="Color.Primary" SelectedColor="Color.Error" Label="true" Size="Size.Medium" Style="width:80px" Value="@("Hospital")"/>
@@ -96,6 +99,7 @@
     private Dictionary<int, TornFactionMember> RivalMembers = [];
 
     private static bool _monitored;
+    private static bool? _hasHigherStats;
     private static string? _searchString;
     private static ICollection<object> _selectedValues = [];
 
@@ -161,6 +165,25 @@
         base.OnParametersSet();
     }
 
+    private async Task OnToggleChanged(bool state)
+    {
+        _hasHigherStats = _hasHigherStats switch
+        {
+            true => null,
+            false => true,
+            _ => false
+        };
+
+        if (_hasHigherStats is not null)
+            await _dataGrid!.SetSortAsync("Total Stats", SortDirection.Descending, x => SumStats(x.Key));
+        else 
+            await _dataGrid!.SetSortAsync("Level", SortDirection.Descending, x => x.Value.Level);
+
+
+
+        UpdateTableView();
+    }
+
     private void UpdateTableView()
     {
         if (Data?.RivalFaction is null) return;
@@ -170,12 +193,14 @@
             RivalMembers = Data.RivalFaction.Members
                                                 .Where(x => SelectedValues.Any(v => v.ToString() == x.Value.Status.State))
                                                 .Where(x => Monitored ? Data.WarSession.FactionTargets.Contains(x.Key) : true)
+                                                .Where(x => _hasHigherStats.HasValue ? SumStats(x.Key) >= Data.CurrentUser!.Stats.Total == _hasHigherStats : true)
                                                 .ToDictionary<int, TornFactionMember>();
         }
         else
         {
             RivalMembers = Data.RivalFaction.Members
                                             .Where(x => Monitored ? Data.WarSession.FactionTargets.Contains(x.Key) : true)
+                                            .Where(x => _hasHigherStats.HasValue ? SumStats(x.Key) >= Data.CurrentUser!.Stats.Total == _hasHigherStats : true)
                                             .ToDictionary<int, TornFactionMember>();
         }
     }
@@ -200,7 +225,6 @@
         if (Data!.Spies.TryGetValue(id, out var spy) is false || spy is null) return Color.Default;
 
         var stats = Data.CurrentUser!.Stats;
-        var total = stats.Strength + stats.Defense + stats.Speed + stats.Dexterity;
 
         return stat switch
         {
@@ -208,7 +232,7 @@
             "def" => spy.Defense == 0 ? Color.Info : spy.Defense > stats.Defense ? Color.Error : Color.Success,
             "spd" => spy.Speed == 0 ? Color.Info : spy.Speed > stats.Speed ? Color.Error : Color.Success,
             "dex" => spy.Dexterity == 0 ? Color.Info : spy.Dexterity > stats.Dexterity ? Color.Error : Color.Success,
-            _ => spy.Total == 0 ? Color.Info : spy.Total > total ? Color.Error : Color.Success,
+            _ => spy.Total == 0 ? Color.Info : spy.Total > stats.Total ? Color.Error : Color.Success,
         };
 
     }

@@ -12,7 +12,10 @@ public sealed class ApplicationUser(int userId, string userName, TornUserFaction
     public UserState State { get; set; }
 }
 
-public sealed record BattleStats(ulong Strength, ulong Defense, ulong Speed, ulong Dexterity);
+public sealed record BattleStats(ulong Strength, ulong Defense, ulong Speed, ulong Dexterity)
+{
+    public ulong Total { get; } = Strength + Defense + Speed + Dexterity;
+};
 
 public enum UserStatus
 {
