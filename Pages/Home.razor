@@ -34,18 +34,26 @@
                 </CellTemplate>
             </TemplateColumn>
             <PropertyColumn Property="@(x => x.Value.Level)" />
-            <TemplateColumn Title="Total Stats">
+            <TemplateColumn Title="Total Stats" SortBy="@(x => SumStats(x.Key))">
                 <CellTemplate>
                     <MudTooltip Color="Color.Primary" Arrow="true" Placement="Placement.Top" ShowOnFocus="false"
                                 ShowOnClick="@HasStatValues(context.Item.Key)" ShowOnHover="@HasStatValues(context.Item.Key)">
                         <ChildContent>
-                            <MudText>@GetBattleStats(context.Item.Key)</MudText>
+                            <MudText Color="@BattleStatusColor(context.Item.Key, "sum")">@GetBattleStats(context.Item.Key)</MudText>
                         </ChildContent>
                         <TooltipContent>
-                            <MudText Typo="Typo.caption">@($"Strength: {GetBattleStats(context.Item.Key, "str")}")</MudText><br />
-                            <MudText Typo="Typo.caption">@($"Defense: {GetBattleStats(context.Item.Key, "def")}")</MudText><br />
-                            <MudText Typo="Typo.caption">@($"Speed: {GetBattleStats(context.Item.Key, "spd")}")</MudText><br />
-                            <MudText Typo="Typo.caption">@($"Dexterity: {GetBattleStats(context.Item.Key, "dex")}")</MudText>
+                            <MudText Typo="Typo.caption" Color="@BattleStatusColor(context.Item.Key, "str")">
+                                @($"Strength: {GetBattleStats(context.Item.Key, "str")}")
+                            </MudText><br />
+                            <MudText Typo="Typo.caption" Color="@BattleStatusColor(context.Item.Key, "def")">
+                                @($"Defense: {GetBattleStats(context.Item.Key, "def")}")
+                            </MudText><br />
+                            <MudText Typo="Typo.caption" Color="@BattleStatusColor(context.Item.Key, "spd")">
+                                @($"Speed: {GetBattleStats(context.Item.Key, "spd")}")
+                            </MudText><br />
+                            <MudText Typo="Typo.caption" Color="@BattleStatusColor(context.Item.Key, "dex")">
+                                @($"Dexterity: {GetBattleStats(context.Item.Key, "dex")}")
+                            </MudText>
                         </TooltipContent>
                     </MudTooltip>
                 </CellTemplate>
@@ -81,7 +89,7 @@
     </MudDataGrid>
 </MudStack>
 
-    @code {
+@code {
     [CascadingParameter] WarData? Data { get; set; }
 
     private MudDataGrid<KeyValuePair<int, TornFactionMember>>? _dataGrid;
@@ -124,6 +132,8 @@
         if (pair.Value.FilterByName(_searchString)) return true;
 
         if (pair.Value.FilterByLevel(_searchString)) return true;
+
+        if (pair.Value.FilterByBattleStats(_searchString, SumStats(pair.Key))) return true;
 
         return false;
     };
@@ -185,24 +195,57 @@
         _ => Color.Info
     };
 
+    private Color BattleStatusColor(int id, string stat)
+    {
+        if (Data!.Spies.TryGetValue(id, out var spy) is false || spy is null) return Color.Default;
+
+        var stats = Data.CurrentUser!.Stats;
+        var total = stats.Strength + stats.Defense + stats.Speed + stats.Dexterity;
+
+        return stat switch
+        {
+            "str" => spy.Strength == 0 ? Color.Info : spy.Strength > stats.Strength ? Color.Error : Color.Success,
+            "def" => spy.Defense == 0 ? Color.Info : spy.Defense > stats.Defense ? Color.Error : Color.Success,
+            "spd" => spy.Speed == 0 ? Color.Info : spy.Speed > stats.Speed ? Color.Error : Color.Success,
+            "dex" => spy.Dexterity == 0 ? Color.Info : spy.Dexterity > stats.Dexterity ? Color.Error : Color.Success,
+            _ => spy.Total == 0 ? Color.Info : spy.Total > total ? Color.Error : Color.Success,
+        };
+
+    }
+
+    private ulong SumStats(int id)
+    {
+        if (Data!.Spies.TryGetValue(id, out var spy) is false || spy is null) return 0;
+
+        return spy.Strength + spy.Defense + spy.Speed + spy.Dexterity;
+    }
+
     private string GetBattleStats(int id, string stat = "Total")
     {
         if (Data!.Spies.TryGetValue(id, out var spy) && spy is not null)
         {           
             return  stat switch
             {
-                "str" => spy.Strength == 0 ? "Unknown" : ((double)spy.Strength).ToMetric(),
-                "def" => spy.Defense == 0 ? "Unknown" : ((double)spy.Defense).ToMetric(),
-                "spd" => spy.Speed == 0 ? "Unknown" : ((double)spy.Speed).ToMetric(),
-                "dex" => spy.Dexterity == 0 ? "Unknown" : ((double)spy.Dexterity).ToMetric(),
-                _ => spy.Total == 0 ? "Unknown" : ((double)spy.Total).ToMetric()
+                "str" => spy.Strength == 0 ? "Unknown" : FormatNumber(spy.Strength),
+                "def" => spy.Defense == 0 ? "Unknown" : FormatNumber(spy.Defense),
+                "spd" => spy.Speed == 0 ? "Unknown" : FormatNumber(spy.Speed),
+                "dex" => spy.Dexterity == 0 ? "Unknown" : FormatNumber(spy.Dexterity),
+                _ => spy.Total == 0 ? "Unknown" : FormatNumber(spy.Total)
             };
         };
 
         return "Unavailable";
     }
 
-    private bool HasStatValues(int id) => Data!.Spies.TryGetValue(id, out var spy) && spy is not null && spy.Total > 0;
+    private string FormatNumber(ulong number) => number switch
+    {
+        >= 1_000_000_000 => $"{number / 1_000_000_000}B",
+        >= 1_000_000 => $"{number / 1_000_000}M",
+        >= 1_000 => $"{number / 1_000}K",
+        _ => number.ToString()
+    };
+
+    private bool HasStatValues(int id) => Data!.Spies.TryGetValue(id, out var spy) && spy is not null;
 
     private async Task ToggleMonitoringAsync(bool monitor, int userId)
     {

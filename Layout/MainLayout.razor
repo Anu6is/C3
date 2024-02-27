@@ -55,7 +55,7 @@
 
         if (user?.Name is null) return null;
 
-        return new ApplicationUser(user!.Player_Id, user!.Name, user!.Faction, token)
+        return new ApplicationUser(user!.Player_Id, user!.Name, user!.Faction, new(user.Strength, user.Defense, user.Speed, user.Dexterity), token)
         {
             State = user.Status,
             ActivityStatus = user.Last_Action

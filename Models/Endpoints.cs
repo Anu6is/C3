@@ -18,6 +18,12 @@ public class Endpoints
             selections.Add("profile");
             return this;
         }
+
+        public UserEndpointBuilder BattleStats()
+        {
+            selections.Add("battlestats");
+            return this;
+        }
     }
 
     public class FactionEndpointBuilder(int factionId = 0) : EndpointBuilder

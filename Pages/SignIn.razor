@@ -41,7 +41,7 @@
 
         if (token is null) return;
 
-        var user = new ApplicationUser(_user!.Player_Id, _user!.Name, _user!.Faction, token)
+        var user = new ApplicationUser(_user!.Player_Id, _user!.Name, _user!.Faction, new(_user.Strength, _user.Defense, _user.Speed, _user.Dexterity), token)
             {
                 State = _user.Status,
                 ActivityStatus = _user.Last_Action

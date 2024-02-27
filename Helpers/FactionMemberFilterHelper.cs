@@ -20,12 +20,20 @@ public static partial class FactionMemberFilterHelper
         var match = IsLessThanOrEqualToFilter().Match(filter);
 
         if (match is not null && match.Success)
-            return member.Level <= int.Parse(match.Groups[1].Value);
+        {
+            var value = int.Parse(match.Groups[1].Value);
+
+            return value <= 100 && member.Level <= value;
+        }
 
         match = IsLessThanFilter().Match(filter);
 
         if (match is not null && match.Success)
-            return member.Level < int.Parse(match.Groups[1].Value);
+        {
+            var value = int.Parse(match.Groups[1].Value);
+
+            return value <= 100 && member.Level < value;
+        }
 
         match = IsGreaterThanOrEqualToFilter().Match(filter);
 
@@ -41,6 +49,38 @@ public static partial class FactionMemberFilterHelper
 
         if (match.Success)
             return member.Level == int.Parse(match.Groups[1].Value);
+
+        return false;
+    }
+
+    public static bool FilterByBattleStats(this TornFactionMember _, string filter, ulong spyTotal)
+    {
+        if (spyTotal == 0) return false;
+
+        var match = IsLessThanOrEqualToFilter().Match(filter);
+
+        if (match is not null && match.Success)
+            return spyTotal <= ulong.Parse(match.Groups[1].Value);
+
+        match = IsLessThanFilter().Match(filter);
+
+        if (match is not null && match.Success)
+            return spyTotal < ulong.Parse(match.Groups[1].Value);
+
+        match = IsGreaterThanOrEqualToFilter().Match(filter);
+
+        if (match is not null && match.Success)
+            return spyTotal >= ulong.Parse(match.Groups[1].Value);
+
+        match = IsGreaterThanFilter().Match(filter);
+
+        if (match.Success)
+            return spyTotal > ulong.Parse(match.Groups[1].Value);
+
+        match = IsEqualToFilter().Match(filter);
+
+        if (match.Success)
+            return spyTotal == ulong.Parse(match.Groups[1].Value);
 
         return false;
     }

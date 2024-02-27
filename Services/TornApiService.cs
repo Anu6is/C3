@@ -11,7 +11,7 @@ public sealed class TornApiService(HttpClient httpClient, ProtectedTokenStore To
         
         if (key is null) return null;
 
-        return await httpClient.GetFromJsonAsync<TornUser>(Endpoints.User().Profile().WithAuthorization(key));
+        return await httpClient.GetFromJsonAsync<TornUser>(Endpoints.User().Profile().BattleStats().WithAuthorization(key));
     }
 
     public async Task<TornFaction?> GetFactionAsync(int factionId)
