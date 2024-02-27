@@ -4,6 +4,12 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+	<GHPages>true</GHPages>
+	<TrimMode>partial</TrimMode>
+	<PublishTrimmed>true</PublishTrimmed>
+	<InvariantGlobalization>true</InvariantGlobalization>
+	<BlazorEnableTimeZoneSupport>false</BlazorEnableTimeZoneSupport>
+	<BlazorWebAssemblyPreserveCollationData>false</BlazorWebAssemblyPreserveCollationData>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,6 +19,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="8.0.2" PrivateAssets="all" />
 	<PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
 	<PackageReference Include="MudBlazor" Version="6.16.0" />
+	<PackageReference Include="PublishSPAforGitHubPages.Build" Version="2.1.1" />
   </ItemGroup>
 
 </Project>
