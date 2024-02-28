@@ -32,6 +32,8 @@
 
     private async Task KeyboardEventHandler(KeyboardEventArgs args)
     {
+        if (args is null || string.IsNullOrEmpty(args.Key)) return;
+
         if (args.Key.Equals("Enter") && _success) await Submit();
     }
 
@@ -52,7 +54,7 @@
 
     private async Task<string?> ValidateKeyAsync(string? arg)
     {
-        if (string.IsNullOrWhiteSpace(arg)) return null;
+        if (string.IsNullOrWhiteSpace(arg) || arg.Length <= 12) return "API key is required!";
 
         await TokenStore.SetTokenAsync(arg);
 
