@@ -6,7 +6,7 @@
     <WarTracker />
 
     <MudDataGrid @ref="@_dataGrid" T="KeyValuePair<int, TornFactionMember>" Items="@RivalMembers" Style="width:100%;" Height="60vh" Loading="@(Data?.RivalFaction is null)"
-                 Dense="true" FixedHeader="true" FixedFooter="true" Filterable="true" Hover="true" SortMode="SortMode.Multiple" QuickFilter="@_quickFilter">
+                 Class="mb-8" Dense="true" FixedHeader="true" FixedFooter="true" Filterable="true" Hover="true" SortMode="SortMode.Multiple" QuickFilter="@_quickFilter">
         <ToolBarContent>
             <MudText Typo="Typo.h6">@Data?.RivalFaction?.Name</MudText>
             <MudSpacer />
@@ -15,9 +15,15 @@
             <MudToggleIconButton Icon="@Icons.Material.Filled.KeyboardDoubleArrowDown" ToggledIcon="@Icons.Material.Filled.KeyboardDoubleArrowUp"
                                  Color="@(_hasHigherStats is null ? Color.Default : Color.Success)" ToggledColor="Color.Error"
                                  Toggled="@(_hasHigherStats ?? false)" ToggledChanged="@OnToggleChanged" />
-            <MudChipSet MultiSelection="true" Filter="true" @bind-SelectedValues="@SelectedValues">
-                <MudChip Text="Okay" Color="Color.Primary" SelectedColor="Color.Success" Label="true" Size="Size.Medium" Style="width:80px" Value="@("Okay")"/>
-                <MudChip Text="Hospital" Color="Color.Primary" SelectedColor="Color.Error" Label="true" Size="Size.Medium" Style="width:80px" Value="@("Hospital")"/>
+            <MudChipSet Class="d-none d-sm-flex" MultiSelection="true" Filter="true" @bind-SelectedValues="@SelectedValues">
+                <MudChip Text="Okay" Color="Color.Primary" SelectedColor="Color.Success" Label="true" Size="Size.Medium" Style="width:80px;" Value="@("Okay")"/>
+                <MudChip Text="Hospital" Color="Color.Primary" SelectedColor="Color.Error" Label="true" Size="Size.Medium" Style="width:80px;" Value="@("Hospital")" />
+            </MudChipSet>
+            <MudChipSet Class="d-flex d-sm-none" MultiSelection="true" Filter="true" @bind-SelectedValues="@SelectedValues">
+                <MudChip Color="Color.Primary" SelectedColor="Color.Success" Label="true" Size="Size.Medium" Value="@("Okay")"
+                         Icon="@Icons.Material.Filled.AccessibilityNew" CheckedIcon="@Icons.Material.Filled.AccessibilityNew" />
+                <MudChip Color="Color.Primary" SelectedColor="Color.Error" Label="true" Size="Size.Medium" Value="@("Hospital")"
+                         Icon="@Icons.Material.Filled.MedicalInformation" CheckedIcon="@Icons.Material.Filled.MedicalInformation" />
             </MudChipSet>
         </ToolBarContent>
         <Columns>
@@ -83,11 +89,19 @@
             </TemplateColumn>
         </Columns>
         <PagerContent>
-            <MudStack Row="true" Class="pl-8" AlignItems="AlignItems.Center" Style="width:100%">
-                <MudSwitch @bind-Value="@Monitored" Color="Color.Error">Monitored Only</MudSwitch>
-                <MudSpacer/>
-                <MudDataGridPager T="KeyValuePair<int, TornFactionMember>" />
-            </MudStack>
+            <MudHidden Breakpoint="Breakpoint.Xs">
+                <MudStack Row="true" Class="pl-8" AlignItems="AlignItems.Center" Style="width:100%">
+                    <MudSwitch @bind-Value="@Monitored" Color="Color.Error">Monitored Only</MudSwitch>
+                    <MudSpacer />
+                    <MudDataGridPager T="KeyValuePair<int, TornFactionMember>" />
+                </MudStack>
+            </MudHidden>
+            <MudHidden Breakpoint="Breakpoint.Xs" Invert="true">
+                <MudStack Row="false" Class="pt-4" AlignItems="AlignItems.Center" Style="width:100%">
+                    <MudSwitch @bind-Value="@Monitored" Color="Color.Error" Size="Size.Small">Monitored Only</MudSwitch>
+                    <MudDataGridPager T="KeyValuePair<int, TornFactionMember>" />
+                </MudStack>
+            </MudHidden>
         </PagerContent>
     </MudDataGrid>
 </MudStack>
