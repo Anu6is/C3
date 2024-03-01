@@ -11,7 +11,7 @@
             <MudText Typo="Typo.h6">@Data?.RivalFaction?.Name</MudText>
             <MudSpacer />
             <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true" Margin="Margin.Dense"
-                            AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-n4 px-4"></MudTextField>
+                           AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-n4 px-4" Clearable="true" />
             <MudToggleIconButton Icon="@Icons.Material.Filled.KeyboardDoubleArrowDown" ToggledIcon="@Icons.Material.Filled.KeyboardDoubleArrowUp"
                                  Color="@(_hasHigherStats is null ? Color.Default : Color.Success)" ToggledColor="Color.Error"
                                  Toggled="@(_hasHigherStats ?? false)" ToggledChanged="@OnToggleChanged" />
@@ -124,6 +124,9 @@
         {
             _selectedValues = value;
 
+            CustomFilterOptions.Instance.IsOkay = _selectedValues.Contains("Okay");
+            CustomFilterOptions.Instance.InHospital = _selectedValues.Contains("Hospital");
+
             UpdateTableView();
         }
     }
@@ -134,6 +137,8 @@
         set
         {
             _monitored = value;
+
+            CustomFilterOptions.Instance.IsMonitored = _monitored;
 
             UpdateTableView();
         } 
@@ -165,7 +170,22 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        CustomFilterOptions.Instance.FilterString = _searchString;
+
         if (firstRender is false) return;
+
+        var filterOptions = await BrowserStore.GetFilterOptionsAsync();
+
+        if (filterOptions is not null)
+        {
+            _searchString = filterOptions.FilterString;
+            _hasHigherStats = filterOptions.HasHigherStats;
+
+            if (filterOptions.IsOkay) _selectedValues.Add("Okay");
+            if (filterOptions.InHospital) _selectedValues.Add("Hospital");
+
+            Monitored = filterOptions.IsMonitored;
+        }
 
         await _dataGrid!.SetSortAsync("Level", SortDirection.Descending, x => x.Value.Level);
 
@@ -193,7 +213,7 @@
         else 
             await _dataGrid!.SetSortAsync("Level", SortDirection.Descending, x => x.Value.Level);
 
-
+        CustomFilterOptions.Instance.HasHigherStats = _hasHigherStats;
 
         UpdateTableView();
     }
@@ -291,6 +311,8 @@
             Data!.WarSession.FactionTargets.Add(userId);
         else
             Data!.WarSession.FactionTargets.Remove(userId);
+
+        CustomFilterOptions.Instance.Targets = Data!.WarSession.FactionTargets;
 
         await BrowserStore.SaveSessionAsync(Data.WarSession);
     }

@@ -1,4 +1,7 @@
-﻿<MudAppBar Elevation="3" Dense="true" Color="Color.Primary">
+﻿@inject BrowserStorageService BrowserStore
+@inject ISnackbar Snackbar
+
+<MudAppBar Elevation="3" Dense="true" Color="Color.Primary">
     <MudText Class="d-none d-sm-flex">@FactionName</MudText>
     <MudSpacer />
     <Conditional Expression="@(StartTime > 0)">
@@ -19,13 +22,26 @@
         </TrueContent>
     </Conditional>
     <MudSpacer />
+    <MudIconButton Icon="@Icons.Material.Filled.Save" Color="Color.Inherit" OnClick="@SaveFiltersAsync" />
     <MudText>@Username</MudText>
 </MudAppBar>
 
-    @code {
+@code {
     [EditorRequired][Parameter] public required string FactionName { get; set; }
     [EditorRequired][Parameter] public required string Username { get; set; }
 
     [Parameter] public ulong StartTime { get; set; }
     [Parameter] public string? Winner { get; set; }
+    [Parameter] public int WarId { get; set; }
+
+    private async Task SaveFiltersAsync(MouseEventArgs args)
+    {
+        var filters = CustomFilterOptions.Instance;
+
+        filters.WarId = WarId;
+
+        await BrowserStore.SaveFilterOptionsAsync(filters);
+
+        Snackbar.Add("Filter options saved!", Severity.Success);
+    }
 }

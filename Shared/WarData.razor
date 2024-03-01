@@ -61,7 +61,25 @@
         }
         else
         {
-            WarSession.StartTime = UserFaction!.Ranked_Wars.First().Value.War.Start;
+            var war = UserFaction!.Ranked_Wars.First();
+
+            WarSession.WarId = war.Key;
+            WarSession.StartTime = war.Value.War.Start;
+
+            var filterOptions = await BrowserStore.GetFilterOptionsAsync();
+
+            if (filterOptions is not null)
+            {
+                if (filterOptions.WarId != war.Key)
+                {
+                    await BrowserStore.DeleteFilterOptionsAsync();
+                }
+                else
+                {
+                    WarSession.FactionTargets = filterOptions.Targets;
+                    C3.Models.CustomFilterOptions.FromCache(filterOptions);
+                }
+            }
 
             await BrowserStore.SaveSessionAsync(WarSession);
         }

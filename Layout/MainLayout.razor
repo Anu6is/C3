@@ -13,7 +13,7 @@
         <TrueContent>
             <WarData CurrentUser="@CurrentUser" WarSession="@WarSession" OnWarEnded="@WarEnded">
                 <AppBar Username="@CurrentUser!.Username" FactionName="@CurrentUser!.Faction.Faction_Name" 
-                        StartTime="@WarSession.StartTime" Winner="@Winner"/>
+                        WarId="@WarSession.WarId" StartTime="@WarSession.StartTime" Winner="@Winner" />
                 <MudMainContent Style="height:100vh;">
                     <MudContainer Class="mt-4" MaxWidth="MaxWidth.Large">
                         @Body

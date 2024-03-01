@@ -1,4 +1,5 @@
 using Blazor.SubtleCrypto;
+using Blazored.LocalStorage;
 using Blazored.SessionStorage;
 using C3;
 using C3.Services;
@@ -14,6 +15,7 @@ builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
 builder.Services.AddMudServices();
+builder.Services.AddBlazoredLocalStorage();
 builder.Services.AddBlazoredSessionStorage();
 
 builder.Services.AddSingleton<WarSession>();
