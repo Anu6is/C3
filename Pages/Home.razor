@@ -6,7 +6,7 @@
     <WarTracker />
 
     <MudDataGrid @ref="@_dataGrid" T="KeyValuePair<int, TornFactionMember>" Items="@RivalMembers" Style="width:100%;" Height="60vh" Loading="@(Data?.RivalFaction is null)"
-                 Class="mb-8" Dense="true" FixedHeader="true" FixedFooter="true" Filterable="true" Hover="true" SortMode="SortMode.Multiple" QuickFilter="@_quickFilter">
+                 Class="mb-8" Dense="true" FixedHeader="true" FixedFooter="true" Filterable="false" Hover="true" SortMode="SortMode.Multiple" QuickFilter="@_quickFilter">
         <ToolBarContent>
             <MudText Typo="Typo.h6">@Data?.RivalFaction?.Name</MudText>
             <MudSpacer />
@@ -67,17 +67,17 @@
                     </MudTooltip>
                 </CellTemplate>
             </TemplateColumn>
-            <TemplateColumn Title="State" Filterable="false" SortBy="@(x => x.Value.Status.State)">
+            <TemplateColumn Title="State" SortBy="@(x => x.Value.Status.State)">
                 <CellTemplate>
                     <MudChip Color="@StateColor(context.Item.Value.Status.State)" Text="@context.Item.Value.Status.State" Size="Size.Small"/>
                 </CellTemplate>
             </TemplateColumn>
-            <TemplateColumn Title="Until" Filterable="false" SortBy="@(x => x.Value.Status.Until)">
+            <TemplateColumn Title="Until" SortBy="@(x => x.Value.Status.Until)">
                 <CellTemplate>
                     <Countdown Seconds="@context.Item.Value.Status.Until" />
                 </CellTemplate>
             </TemplateColumn>
-            <TemplateColumn Title="Monitor" Filterable="false" Sortable="false">
+            <TemplateColumn Title="Monitor" SortBy="@(x => Data!.WarSession.FactionTargets.Contains(x.Key))">
                 <CellTemplate>
                     <MudToggleIconButton Variant="Variant.Filled" Toggled="@(Data!.WarSession.FactionTargets.Contains(context.Item.Key))"
                                             Title="Monitor" ToggledTitle="Ignore"
