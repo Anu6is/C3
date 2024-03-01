@@ -220,7 +220,8 @@
 
     private void UpdateTableView()
     {
-        if (Data?.RivalFaction is null) return;
+        if (Data?.CurrentUser is null) return;
+        if (Data?.RivalFaction is null || Data.RivalFaction.Members is null) return;
 
         if (SelectedValues?.Count > 0)
         {
