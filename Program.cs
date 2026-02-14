@@ -22,6 +22,7 @@ builder.Services.AddScoped<WarSession>();
 builder.Services.AddScoped<FilterStateContainer>();
 builder.Services.AddScoped<ProtectedTokenStore>();
 builder.Services.AddScoped<BrowserStorageService>();
+builder.Services.AddScoped<MemberFilterService>();
 
 builder.Services.AddSubtleCrypto(options => options.Key = ProtectedTokenStore.Key);
 
