@@ -119,7 +119,7 @@
             if (!AreSpiesEqual(Spies, newSpies))
             {
                 Spies = newSpies;
-                ChangeTracker.NotifySpiesChanged();
+                ChangeTracker.NotifyChanged();
                 StateHasChanged();
             }
         }
@@ -136,7 +136,7 @@
                 if (HasFactionChanged(RivalFaction, newFaction))
                 {
                     RivalFaction = newFaction;
-                    ChangeTracker.NotifyMembersChanged();
+                    ChangeTracker.NotifyChanged();
                     StateHasChanged();
                 }
 
