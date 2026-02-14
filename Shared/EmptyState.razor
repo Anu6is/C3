@@ -16,10 +16,10 @@
 </MudPaper>
 
 @code {
-    [Parameter] public string Icon { get; set; } = Icons.Material.Filled.SearchOff;
-    [Parameter] public string Title { get; set; } = "No results found";
-    [Parameter] public string Message { get; set; } = string.Empty;
-    [Parameter] public string ActionText { get; set; } = string.Empty;
-    [Parameter] public string ActionIcon { get; set; } = string.Empty;
+    [Parameter] public string? Icon { get; set; } = Icons.Material.Filled.SearchOff;
+    [Parameter] public string? Title { get; set; } = "No results found";
+    [Parameter] public string? Message { get; set; }
+    [Parameter] public string? ActionText { get; set; }
+    [Parameter] public string? ActionIcon { get; set; }
     [Parameter] public EventCallback OnAction { get; set; }
 }

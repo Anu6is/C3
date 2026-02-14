@@ -251,14 +251,11 @@
             _ => false
         };
 
-        if (HasHigherStats is not null)
+        if (_dataGrid != null)
         {
-            if (_dataGrid != null)
+            if (HasHigherStats is not null)
                 await _dataGrid.SetSortAsync("Total Stats", SortDirection.Descending, x => SumStats(x.Key));
-        }
-        else 
-        {
-            if (_dataGrid != null)
+            else
                 await _dataGrid.SetSortAsync("Level", SortDirection.Descending, x => x.Value.Level);
         }
     }
