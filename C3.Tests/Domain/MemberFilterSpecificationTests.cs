@@ -10,11 +10,11 @@ public class MemberFilterSpecificationTests
     public void WithStates_FiltersCorrectly()
     {
         // Arrange
-        var members = new Dictionary<int, TornFactionMember>
+        var members = new Dictionary<int, FactionMemberData>
         {
-            [1] = new TornFactionMember("User1", 10, new TornUserState("desc", "Okay", 0), new TornUserActivity("Online", 0, "rel")),
-            [2] = new TornFactionMember("User2", 20, new TornUserState("desc", "Hospital", 0), new TornUserActivity("Offline", 0, "rel")),
-            [3] = new TornFactionMember("User3", 30, new TornUserState("desc", "Jail", 0), new TornUserActivity("Offline", 0, "rel"))
+            [1] = new FactionMemberData("User1", 10, "Okay", "Online", 0, 0),
+            [2] = new FactionMemberData("User2", 20, "Hospital", "Offline", 0, 0),
+            [3] = new FactionMemberData("User3", 30, "Jail", "Offline", 0, 0)
         };
         var spec = new MemberFilterSpecification().WithStates(new[] { "Okay", "Hospital" });
 
@@ -31,7 +31,7 @@ public class MemberFilterSpecificationTests
     public void WithStatComparison_HigherStats_FiltersCorrectly()
     {
         // Arrange
-        var members = new Dictionary<int, TornFactionMember>
+        var members = new Dictionary<int, FactionMemberData>
         {
             [1] = CreateMember("User1"),
             [2] = CreateMember("User2")
@@ -47,6 +47,6 @@ public class MemberFilterSpecificationTests
         Assert.Equal(1, filtered[0].Key);
     }
 
-    private static TornFactionMember CreateMember(string name) =>
-        new TornFactionMember(name, 1, new TornUserState("desc", "Okay", 0), new TornUserActivity("Online", 0, "rel"));
+    private static FactionMemberData CreateMember(string name) =>
+        new FactionMemberData(name, 1, "Okay", "Online", 0, 0);
 }

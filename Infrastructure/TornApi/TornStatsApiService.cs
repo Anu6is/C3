@@ -6,7 +6,7 @@ using System.Net.Http.Json;
 
 namespace C3.Infrastructure.TornApi;
 
-public class TornStatsApiService(HttpClient httpClient, ProtectedTokenStore TokenStore, ILogger<TornStatsApiService> logger) : IDisposable
+public class TornStatsApiService(HttpClient httpClient, ProtectedTokenStore TokenStore, ILogger<TornStatsApiService> logger) : ITornStatsApiService, IDisposable
 {
     public async Task<Result<SpyResults>> GetFactionSpiesAsync(int factionId)
     {

@@ -1,7 +1,8 @@
-﻿@inherits LayoutComponentBase
+@using C3.Application.Interfaces
+@inherits LayoutComponentBase
 
 @inject WarSession WarSession
-@inject TornApiService ApiService
+@inject IUserRepository UserRepo
 @inject ProtectedTokenStore TokenStore
 @inject BrowserStorageService SessionStore;
 
@@ -54,19 +55,24 @@
 
         if (token is null) return null;
 
-        var result = await ApiService.GetCurrentUserAsync();
+        var result = await UserRepo.GetCurrentUserAsync();
 
         if (result.IsFailure || result.Value is null) return null;
 
         var user = result.Value;
 
-        if (user.Name is null) return null;
-
-        return new ApplicationUser(user.Player_Id, user.Name, user.Faction, new(user.Strength, user.Defense, user.Speed, user.Dexterity), token)
+        var applicationUser = new ApplicationUser(
+            user.PlayerId,
+            user.Name,
+            new TornUserFaction(user.Faction.FactionId, user.Faction.FactionName, user.Faction.FactionTag),
+            new BattleStats(user.Stats.Strength, user.Stats.Defense, user.Stats.Speed, user.Stats.Dexterity),
+            token)
         {
-            State = user.Status,
-            ActivityStatus = user.Last_Action
+            State = Enum.TryParse<UserState>(user.State.State, out var state) ? state : UserState.Okay,
+            ActivityStatus = Enum.TryParse<UserStatus>(user.Activity.Status, out var status) ? status : UserStatus.Offline
         };
+
+        return applicationUser;
     }
 
     private void SuccessfulSignin(ApplicationUser user)

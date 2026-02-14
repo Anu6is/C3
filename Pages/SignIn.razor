@@ -1,4 +1,5 @@
-﻿@inject TornApiService ApiService
+@using C3.Application.Interfaces
+@inject IUserRepository UserRepo
 @inject ProtectedTokenStore TokenStore
 
 <MudContainer Class="d-flex flex-column justify-center" MaxWidth="MaxWidth.Small" Style="height:100vh;">
@@ -28,7 +29,7 @@
 
     private bool _success;
     private MudForm? _form;
-    private TornUser? _user;
+    private UserData? _user;
 
     private async Task KeyboardEventHandler(KeyboardEventArgs args)
     {
@@ -41,12 +42,17 @@
     {
         var token = await TokenStore.GetTokenAsync();
 
-        if (token is null) return;
+        if (token is null || _user is null) return;
 
-        var user = new ApplicationUser(_user!.Player_Id, _user!.Name, _user!.Faction, new(_user.Strength, _user.Defense, _user.Speed, _user.Dexterity), token)
+        var user = new ApplicationUser(
+            _user.PlayerId,
+            _user.Name,
+            new TornUserFaction(_user.Faction.FactionId, _user.Faction.FactionName, _user.Faction.FactionTag),
+            new BattleStats(_user.Stats.Strength, _user.Stats.Defense, _user.Stats.Speed, _user.Stats.Dexterity),
+            token)
             {
-                State = _user.Status,
-                ActivityStatus = _user.Last_Action
+                State = Enum.TryParse<UserState>(_user.State.State, out var state) ? state : UserState.Okay,
+                ActivityStatus = Enum.TryParse<UserStatus>(_user.Activity.Status, out var status) ? status : UserStatus.Offline
             };
 
         await OnSuccess.InvokeAsync(user);
@@ -58,7 +64,7 @@
 
         await TokenStore.SetTokenAsync(arg);
 
-        var result = await ApiService.GetCurrentUserAsync();
+        var result = await UserRepo.GetCurrentUserAsync();
 
         if (result.IsFailure || result.Value is null)
         {
@@ -69,7 +75,7 @@
 
         return _user.Name is null
             ? "The key provided is invalid" 
-            : _user.Faction.Faction_Id == 0 
+            : _user.Faction.FactionId == 0
                 ? "You don't belong to a Faction" 
                 : null;
     }
