@@ -1,13 +1,8 @@
 @page "/"
 @using MudBlazor
 @using MudBlazor.Utilities
-
-@inject BrowserStorageService BrowserStore
-@inject FilterStateContainer FilterState
-@inject IDialogService DialogService
-@inject MemberFilterService FilterService
-
-@implements IDisposable
+@using C3.Presentation.ViewModels
+@using C3.Presentation.Enums
 
 <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="4" Style="width:100%">
     <MudHotkey Key="JsKey.KeyF" KeyModifiers="[JsKeyModifier.ControlLeft]" OnHotkeyPressed="FocusSearch" />
@@ -31,33 +26,20 @@
                 <DataGridSkeleton />
                 break;
             case LoadingState.Loaded:
-                if (_viewModels.Count == 0)
+                @if (_viewModels.Count == 0)
                 {
-                    if (HasHigherStats.HasValue && (Data?.Spies.Count ?? 0) == 0)
-                    {
-                        <EmptyState
-                            Icon="@Icons.Material.Filled.Security"
-                            Title="No Spy Data Available"
-                            Message="Battle stats require spy reports. Stats will appear as faction members are spied."
-                            ActionText="Learn More"
-                            ActionIcon="@Icons.Material.Filled.Info"
-                            OnAction="ShowSpyInfoDialog" />
-                    }
-                    else
-                    {
-                        <EmptyState
-                            Icon="@Icons.Material.Filled.FilterAltOff"
-                            Title="No faction members match your filters"
-                            Message="Try adjusting your search criteria or filter settings to see more results."
-                            ActionText="Clear All Filters"
-                            ActionIcon="@Icons.Material.Filled.ClearAll"
-                            OnAction="ClearFilters" />
-                    }
+                    <EmptyState
+                        Icon="@(HasHigherStats.HasValue && (Data?.Spies.Count ?? 0) == 0 ? Icons.Material.Filled.Security : Icons.Material.Filled.FilterAltOff)"
+                        Title="@(HasHigherStats.HasValue && (Data?.Spies.Count ?? 0) == 0 ? "No Spy Data Available" : "No faction members match your filters")"
+                        Message="@(HasHigherStats.HasValue && (Data?.Spies.Count ?? 0) == 0 ? "Battle stats require spy reports. Stats will appear as faction members are spied." : "Try adjusting your search criteria or filter settings to see more results.")"
+                        ActionText="@(HasHigherStats.HasValue && (Data?.Spies.Count ?? 0) == 0 ? "Learn More" : "Clear All Filters")"
+                        ActionIcon="@(HasHigherStats.HasValue && (Data?.Spies.Count ?? 0) == 0 ? Icons.Material.Filled.Info : Icons.Material.Filled.ClearAll)"
+                        OnAction="@HandleEmptyStateAction" />
                 }
                 else
                 {
-                    <MudDataGrid @ref="@_dataGrid" T="MemberViewModel" Items="@_viewModels" Style="width:100%;" Height="60vh" Virtualize="true"
-                                 Class="mb-8" Dense="true" FixedHeader="true" FixedFooter="true" Filterable="false" Hover="true" SortMode="SortMode.Multiple" QuickFilter="@_quickFilter">
+                    <MudDataGrid @ref="@_dataGrid" T="FactionMemberViewModel" Items="@_viewModels" Style="width:100%;" Height="60vh" Virtualize="true"
+                                 Class="mb-8" Dense="true" FixedHeader="true" FixedFooter="true" Filterable="false" Hover="true" SortMode="SortMode.Multiple">
                         <ToolBarContent>
                             <MudText Typo="Typo.h6">@Data?.RivalFaction?.Name</MudText>
                             <MudSpacer />
@@ -67,16 +49,12 @@
                                                  Color="@(HasHigherStats is null ? Color.Default : Color.Success)" ToggledColor="Color.Error"
                                                  Toggled="@(HasHigherStats ?? false)" ToggledChanged="@OnToggleChanged" />
                             <MudChipSet Class="d-none d-sm-flex" SelectionMode="SelectionMode.MultiSelection" CheckMark @bind-SelectedValues="@SelectedValues">
-                                <MudChip Text="Okay" Color="Color.Primary" SelectedColor="Color.Success" Label="true" Size="Size.Medium" Style="width:80px;" Value="@("Okay")"
-                                         Icon="@Icons.Material.Filled.CheckCircle" aria-label="Filter by Okay status" />
-                                <MudChip Text="Hospital" Color="Color.Primary" SelectedColor="Color.Error" Label="true" Size="Size.Medium" Style="width:80px;" Value="@("Hospital")"
-                                         Icon="@Icons.Material.Filled.LocalHospital" aria-label="Filter by Hospital status" />
+                                <MudChip Text="Okay" Color="Color.Primary" SelectedColor="Color.Success" Label="true" Size="Size.Medium" Style="width:80px;" Value="@("Okay")" Icon="@Icons.Material.Filled.CheckCircle" />
+                                <MudChip Text="Hospital" Color="Color.Primary" SelectedColor="Color.Error" Label="true" Size="Size.Medium" Style="width:80px;" Value="@("Hospital")" Icon="@Icons.Material.Filled.LocalHospital" />
                             </MudChipSet>
                             <MudChipSet Class="d-flex d-sm-none" SelectionMode="SelectionMode.MultiSelection" CheckMark @bind-SelectedValues="@SelectedValues">
-                                <MudChip Color="Color.Primary" SelectedColor="Color.Success" Label="true" Size="Size.Medium" Value="@("Okay")"
-                                         Icon="@Icons.Material.Filled.CheckCircle" CheckedIcon="@Icons.Material.Filled.CheckCircle" aria-label="Filter by Okay status" />
-                                <MudChip Color="Color.Primary" SelectedColor="Color.Error" Label="true" Size="Size.Medium" Value="@("Hospital")"
-                                         Icon="@Icons.Material.Filled.LocalHospital" CheckedIcon="@Icons.Material.Filled.LocalHospital" aria-label="Filter by Hospital status" />
+                                <MudChip Color="Color.Primary" SelectedColor="Color.Success" Label="true" Size="Size.Medium" Value="@("Okay")" Icon="@Icons.Material.Filled.CheckCircle" />
+                                <MudChip Color="Color.Primary" SelectedColor="Color.Error" Label="true" Size="Size.Medium" Value="@("Hospital")" Icon="@Icons.Material.Filled.LocalHospital" />
                             </MudChipSet>
                         </ToolBarContent>
                         <Columns>
@@ -85,80 +63,43 @@
                                 <CellTemplate>
                                     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Style="width:200px;">
                                         <MudBadge Class="pl-4" Color="@context.Item.StatusColor" Overlap="false" Origin="Origin.CenterLeft" Dot="true">
-                                            <MudLink Color="Color.Info" Href="@($"https://www.torn.com/profiles.php?XID={context.Item.Id}")" Target="_blank">
-                                                @context.Item.Name
-                                            </MudLink>
+                                            <MudLink Color="Color.Info" Href="@context.Item.ProfileUrl" Target="_blank">@context.Item.Name</MudLink>
                                         </MudBadge>
-                                        <MudIconButton Icon="@Icons.Material.Filled.LocationSearching" Color="Color.Error" Size="Size.Small" Title="Attack"
-                                                       Href="@($"https://www.torn.com/loader.php?sid=attack&user2ID={context.Item.Id}")"
-                                                       Target="_blank" />
+                                        <MudIconButton Icon="@Icons.Material.Filled.LocationSearching" Color="Color.Error" Size="Size.Small" Title="Attack" Href="@context.Item.AttackUrl" Target="_blank" />
                                     </MudStack>
                                 </CellTemplate>
                             </TemplateColumn>
                             <PropertyColumn Property="@(x => x.Level)" />
-                            <TemplateColumn Title="Total Stats" SortBy="@(x => x.TotalStats)">
+                            <TemplateColumn Title="Total Stats" SortBy="@(x => x.BattleStats)">
                                 <CellTemplate>
-                                    <MudTooltip Color="Color.Primary" Arrow="true" Placement="Placement.Top" ShowOnFocus="false"
-                                                ShowOnClick="@context.Item.HasStatValues" ShowOnHover="@context.Item.HasStatValues">
-                                        <ChildContent>
-                                            <MudText Color="@context.Item.TotalStatsColor">@context.Item.TotalStatsText</MudText>
-                                        </ChildContent>
+                                    <MudTooltip Color="Color.Primary" Arrow="true" Placement="Placement.Top" ShowOnClick="@context.Item.HasSpyData" ShowOnHover="@context.Item.HasSpyData">
+                                        <ChildContent><MudText Color="@context.Item.BattleStatsColor">@context.Item.BattleStatsDisplay</MudText></ChildContent>
                                         <TooltipContent>
-                                            <MudText Typo="Typo.caption" Color="@context.Item.StrengthColor">
-                                                @($"Strength: {context.Item.StrengthText}")
-                                            </MudText><br />
-                                            <MudText Typo="Typo.caption" Color="@context.Item.DefenseColor">
-                                                @($"Defense: {context.Item.DefenseText}")
-                                            </MudText><br />
-                                            <MudText Typo="Typo.caption" Color="@context.Item.SpeedColor">
-                                                @($"Speed: {context.Item.SpeedText}")
-                                            </MudText><br />
-                                            <MudText Typo="Typo.caption" Color="@context.Item.DexterityColor">
-                                                @($"Dexterity: {context.Item.DexterityText}")
-                                            </MudText>
+                                            @foreach (var stat in new[] { ("Strength", context.Item.StrengthText, context.Item.StrengthColor), ("Defense", context.Item.DefenseText, context.Item.DefenseColor), ("Speed", context.Item.SpeedText, context.Item.SpeedColor), ("Dexterity", context.Item.DexterityText, context.Item.DexterityColor) }) {
+                                                <MudText Typo="Typo.caption" Color="@stat.Item3">@($"{stat.Item1}: {stat.Item2}")</MudText><br />
+                                            }
                                         </TooltipContent>
                                     </MudTooltip>
                                 </CellTemplate>
                             </TemplateColumn>
-                            <TemplateColumn Title="State" SortBy="@(x => x.State)">
-                                <CellTemplate>
-                                    <MudChip Color="@context.Item.StateColor"
-                                             Icon="@context.Item.StateIcon"
-                                             Text="@context.Item.State"
-                                             Size="Size.Small"
-                                             aria-label="@($"Status: {context.Item.State}")" />
-                                </CellTemplate>
+                            <TemplateColumn Title="State" SortBy="@(x => x.StateDisplay)">
+                                <CellTemplate><MudChip Color="@context.Item.StateColor" Icon="@context.Item.StateIcon" Text="@context.Item.StateDisplay" Size="Size.Small" /></CellTemplate>
                             </TemplateColumn>
-                            <TemplateColumn Title="Until" SortBy="@(x => x.Until)">
-                                <CellTemplate>
-                                    <Countdown Seconds="@context.Item.Until" />
-                                </CellTemplate>
+                            <TemplateColumn Title="Until" SortBy="@(x => x.StateUntil)">
+                                <CellTemplate><Countdown Seconds="@context.Item.StateUntil" /></CellTemplate>
                             </TemplateColumn>
                             <TemplateColumn Title="Monitor" SortBy="@(x => x.IsMonitored)">
                                 <CellTemplate>
-                                    <MudToggleIconButton Variant="Variant.Filled" Toggled="@context.Item.IsMonitored"
-                                                         Title="Monitor" ToggledTitle="Ignore"
-                                                         Size="Size.Small" ToggledSize="Size.Small"
-                                                         Color="Color.Default" ToggledColor="Color.Error"
-                                                         ToggledChanged="@(async (x) => await ToggleMonitoringAsync(x, context.Item.Id))"
-                                                         Icon="@Icons.Material.Filled.CrisisAlert" ToggledIcon="@Icons.Material.Filled.CrisisAlert" />
+                                    <MudToggleIconButton Variant="Variant.Filled" Toggled="@context.Item.IsMonitored" Size="Size.Small" ToggledSize="Size.Small" Color="Color.Default" ToggledColor="Color.Error"
+                                                         ToggledChanged="@(async (x) => await ToggleMonitoringAsync(x, context.Item.Id))" Icon="@Icons.Material.Filled.CrisisAlert" ToggledIcon="@Icons.Material.Filled.CrisisAlert" />
                                 </CellTemplate>
                             </TemplateColumn>
                         </Columns>
                         <PagerContent>
-                            <MudHidden Breakpoint="Breakpoint.Xs">
-                                <MudStack Row="true" Class="pl-8" AlignItems="AlignItems.Center" Style="width:100%">
-                                    <MudSwitch @bind-Value="@Monitored" Color="Color.Error">Monitored Only</MudSwitch>
-                                    <MudSpacer />
-                                    <MudDataGridPager T="MemberViewModel" />
-                                </MudStack>
-                            </MudHidden>
-                            <MudHidden Breakpoint="Breakpoint.Xs" Invert="true">
-                                <MudStack Row="false" Class="pt-4" AlignItems="AlignItems.Center" Style="width:100%">
-                                    <MudSwitch @bind-Value="@Monitored" Color="Color.Error" Size="Size.Small">Monitored Only</MudSwitch>
-                                    <MudDataGridPager T="MemberViewModel" />
-                                </MudStack>
-                            </MudHidden>
+                            <MudStack Row="true" Class="pl-8" AlignItems="AlignItems.Center" Style="width:100%">
+                                <MudSwitch @bind-Value="@Monitored" Color="Color.Error" Size="@(IsMobile ? Size.Small : Size.Medium)">Monitored Only</MudSwitch>
+                                <MudSpacer /><MudDataGridPager T="FactionMemberViewModel" />
+                            </MudStack>
                         </PagerContent>
                     </MudDataGrid>
                 }
@@ -169,253 +110,3 @@
         }
     </AppErrorBoundary>
 </MudStack>
-
-@code {
-    [CascadingParameter] WarData? Data { get; set; }
-
-    private LoadingState _dataState =>
-        Data == null || !Data.Initialized || Data.RivalFaction == null
-            ? LoadingState.Loading
-            : LoadingState.Loaded;
-
-    private MudDataGrid<MemberViewModel>? _dataGrid;
-    private MudTextField<string>? _searchField;
-    private MudMessageBox? _spyInfoBox;
-    private List<MemberViewModel> _viewModels = [];
-    private string? _searchInput;
-    private CancellationTokenSource? _searchCts;
-    private int _lastDataVersion;
-    private bool _filterChanged;
-
-    private IReadOnlyCollection<string> SelectedValues 
-    {
-        get => FilterState.SelectedValues;
-        set => FilterState.SelectedValues = value;
-    }
-
-    private bool Monitored 
-    { 
-        get => FilterState.IsMonitored;
-        set => FilterState.IsMonitored = value;
-    }
-
-    private string? SearchString
-    {
-        get => _searchInput;
-        set
-        {
-            _searchInput = value;
-            _ = DebouncedSearchAsync(value);
-        }
-    }
-
-    private async Task DebouncedSearchAsync(string? searchTerm)
-    {
-        _searchCts?.Cancel();
-        _searchCts = new CancellationTokenSource();
-
-        try
-        {
-            await Task.Delay(300, _searchCts.Token);
-            FilterService.InvalidateCache();
-            FilterState.SearchString = searchTerm;
-        }
-        catch (TaskCanceledException)
-        {
-            // Expected when typing quickly
-        }
-    }
-
-    private bool? HasHigherStats
-    {
-        get => FilterState.HasHigherStats;
-        set => FilterState.HasHigherStats = value;
-    }
-
-    private Func<MemberViewModel, bool> _quickFilter => vm =>
-    {
-        var search = FilterState.SearchString?.Trim();
-
-        if (string.IsNullOrWhiteSpace(search) || search.Length < 3) return true;
-
-        if (vm.FilterByStatus(search)) return true;
-
-        if (vm.FilterByName(search)) return true;
-
-        if (vm.FilterByLevel(search)) return true;
-
-        if (vm.FilterByBattleStats(search)) return true;
-
-        return false;
-    };
-
-    protected override Task OnInitializedAsync()
-    {
-        _searchInput = FilterState.SearchString;
-        FilterState.OnChange += HandleStateChange;
-        _ = Data?.MonitorWarProgressAsync();
-
-        return base.OnInitializedAsync();
-    }
-
-    private void HandleStateChange()
-    {
-        if (_searchInput != FilterState.SearchString)
-        {
-            _searchInput = FilterState.SearchString;
-        }
-        UpdateTableView();
-        _filterChanged = true;
-        StateHasChanged();
-    }
-
-    private bool _sortSet;
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (_dataState == LoadingState.Loaded && _dataGrid != null && !_sortSet)
-        {
-            _sortSet = true;
-            await _dataGrid.SetSortAsync("Level", SortDirection.Descending, x => x.Level);
-        }
-
-        await base.OnAfterRenderAsync(firstRender);
-    }
-
-    protected override void OnParametersSet()
-    {
-        if (Data?.ChangeTracker.Version != _lastDataVersion)
-        {
-            UpdateTableView();
-        }
-
-        base.OnParametersSet();
-    }
-
-    protected override bool ShouldRender()
-    {
-        if (_filterChanged || Data?.ChangeTracker.Version != _lastDataVersion)
-        {
-            _filterChanged = false;
-            _lastDataVersion = Data?.ChangeTracker.Version ?? 0;
-            return true;
-        }
-        return false;
-    }
-
-    private async Task OnToggleChanged(bool state)
-    {
-        HasHigherStats = HasHigherStats switch
-        {
-            true => null,
-            false => true,
-            _ => false
-        };
-
-        if (_dataGrid != null)
-        {
-            if (HasHigherStats is not null)
-                await _dataGrid.SetSortAsync("Total Stats", SortDirection.Descending, x => x.TotalStats);
-            else
-                await _dataGrid.SetSortAsync("Level", SortDirection.Descending, x => x.Level);
-        }
-    }
-
-    private void ClearFilters()
-    {
-        FilterState.ResetFilters();
-        UpdateTableView();
-    }
-
-    private async Task ShowSpyInfoDialog()
-    {
-        if (_spyInfoBox != null)
-            await _spyInfoBox.ShowAsync();
-    }
-
-    private async Task FocusSearch()
-    {
-        if (_searchField != null)
-            await _searchField.FocusAsync();
-    }
-
-    private void ToggleMonitored()
-    {
-        Monitored = !Monitored;
-    }
-
-    private void UpdateTableView()
-    {
-        if (Data?.CurrentUser is null || Data?.RivalFaction?.Members is null)
-        {
-            _viewModels = [];
-            return;
-        }
-
-        var criteria = new FilterCriteria(
-            SelectedStates: SelectedValues.Select(v => v.ToString()!).ToList(),
-            MonitoredOnly: Monitored,
-            HasHigherStats: HasHigherStats,
-            MonitoredTargets: Data.WarSession.FactionTargets.ToList()
-        );
-
-        var filteredMembers = FilterService.FilterMembers(
-            Data.RivalFaction.Members,
-            criteria,
-            Data.Spies,
-            Data.CurrentUser.Stats
-        );
-
-        _viewModels = filteredMembers.Select(kvp =>
-        {
-            var id = kvp.Key;
-            var member = kvp.Value;
-            var spy = Data.Spies.GetValueOrDefault(id);
-            var stats = Data.CurrentUser.Stats;
-
-            return new MemberViewModel(
-                Id: id,
-                Name: member.Name,
-                Level: member.Level,
-                StatusColor: MemberViewModel.GetStatusColor(member.Last_Action.Status),
-                StatusText: member.Last_Action.Status,
-                TotalStats: MemberViewModel.GetSumStats(spy),
-                TotalStatsText: MemberViewModel.GetBattleStatsText(spy),
-                TotalStatsColor: MemberViewModel.GetBattleStatusColor(spy, stats, "sum"),
-                StrengthText: MemberViewModel.GetBattleStatsText(spy, "str"),
-                StrengthColor: MemberViewModel.GetBattleStatusColor(spy, stats, "str"),
-                DefenseText: MemberViewModel.GetBattleStatsText(spy, "def"),
-                DefenseColor: MemberViewModel.GetBattleStatusColor(spy, stats, "def"),
-                SpeedText: MemberViewModel.GetBattleStatsText(spy, "spd"),
-                SpeedColor: MemberViewModel.GetBattleStatusColor(spy, stats, "spd"),
-                DexterityText: MemberViewModel.GetBattleStatsText(spy, "dex"),
-                DexterityColor: MemberViewModel.GetBattleStatusColor(spy, stats, "dex"),
-                HasStatValues: spy is not null,
-                State: member.Status.State,
-                StateColor: MemberViewModel.GetStateColor(member.Status.State),
-                StateIcon: MemberViewModel.GetStateIcon(member.Status.State),
-                Until: member.Status.Until,
-                IsMonitored: Data.WarSession.FactionTargets.Contains(id)
-            );
-        }).ToList();
-    }
-
-    private async Task ToggleMonitoringAsync(bool monitor, int userId)
-    {
-        if (monitor)
-            Data!.WarSession.FactionTargets.Add(userId);
-        else
-            Data!.WarSession.FactionTargets.Remove(userId);
-
-        FilterState.Targets = Data!.WarSession.FactionTargets;
-
-        await BrowserStore.SaveSessionAsync(Data.WarSession);
-        UpdateTableView();
-    }
-
-    public void Dispose()
-    {
-        FilterState.OnChange -= HandleStateChange;
-        _searchCts?.Cancel();
-        _searchCts?.Dispose();
-    }
-}

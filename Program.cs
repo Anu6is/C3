@@ -2,7 +2,14 @@ using Blazor.SubtleCrypto;
 using Blazored.LocalStorage;
 using Blazored.SessionStorage;
 using C3;
-using C3.Services;
+using C3.Domain.Models;
+using C3.Application.State;
+using C3.Application.Services;
+using C3.Application.Services.Display;
+using C3.Application.Mapping;
+using C3.Presentation.Mapping;
+using C3.Infrastructure.TornApi;
+using C3.Infrastructure.Storage;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor.Services;
@@ -22,8 +29,11 @@ builder.Services.AddScoped<WarSession>();
 builder.Services.AddScoped<FilterStateContainer>();
 builder.Services.AddScoped<ProtectedTokenStore>();
 builder.Services.AddScoped<BrowserStorageService>();
-builder.Services.AddScoped<MemberFilterService>();
+builder.Services.AddScoped<FactionMemberService>();
 builder.Services.AddSingleton<TimerService>();
+builder.Services.AddSingleton<NumberFormattingService>();
+builder.Services.AddSingleton<ColorMappingService>();
+builder.Services.AddSingleton<FactionMemberViewModelMapper>();
 
 builder.Services.AddSubtleCrypto(options => options.Key = ProtectedTokenStore.Key);
 

@@ -13,6 +13,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="C3.Tests\**" />
+    <Content Remove="C3.Tests\**" />
+    <EmbeddedResource Remove="C3.Tests\**" />
+    <None Remove="C3.Tests\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Blazor.SubtleCrypto" Version="9.0.0" />
     <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
     <PackageReference Include="Blazored.SessionStorage" Version="2.4.0" />
