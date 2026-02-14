@@ -1,3 +1,5 @@
+using C3.Domain.Models;
+
 namespace C3.Application.DTOs;
 
 public record FactionMemberDto
@@ -8,12 +10,5 @@ public record FactionMemberDto
     public string State { get; init; } = string.Empty;
     public string Status { get; init; } = string.Empty;
     public ulong StateUntil { get; init; }
-    public SpyDataDto? SpyData { get; init; }
+    public SpyData? SpyData { get; init; }
 }
-
-public record SpyDataDto(
-    ulong Strength,
-    ulong Defense,
-    ulong Speed,
-    ulong Dexterity,
-    ulong Total);

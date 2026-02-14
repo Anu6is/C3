@@ -5,14 +5,14 @@ namespace C3.Domain.Specifications;
 
 public class MemberFilterSpecification
 {
-    private readonly List<Func<int, TornFactionMember, bool>> _filters = [];
+    private readonly List<Func<int, FactionMemberData, bool>> _filters = [];
 
     public MemberFilterSpecification WithStates(IEnumerable<string> states)
     {
         if (states?.Any() == true)
         {
             var stateSet = states.ToHashSet();
-            _filters.Add((id, member) => stateSet.Contains(member.Status.State));
+            _filters.Add((id, member) => stateSet.Contains(member.State));
         }
         return this;
     }
@@ -56,13 +56,13 @@ public class MemberFilterSpecification
         return this;
     }
 
-    public MemberFilterSpecification WithCustomFilter(Func<int, TornFactionMember, bool> filter)
+    public MemberFilterSpecification WithCustomFilter(Func<int, FactionMemberData, bool> filter)
     {
         _filters.Add(filter);
         return this;
     }
 
-    public bool IsSatisfiedBy(int id, TornFactionMember member)
+    public bool IsSatisfiedBy(int id, FactionMemberData member)
     {
         return _filters.All(filter => filter(id, member));
     }

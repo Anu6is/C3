@@ -3,24 +3,24 @@ using System.Text.RegularExpressions;
 
 namespace C3.Domain.Extensions;
 
-public static partial class TornFactionMemberExtensions
+public static partial class FactionMemberExtensions
 {
-    public static bool FilterByStatus(this TornFactionMember member, string status)
+    public static bool FilterByStatus(this FactionMemberData member, string status)
     {
-        return member.Last_Action.Status.Contains(status, StringComparison.OrdinalIgnoreCase);
+        return member.Status.Contains(status, StringComparison.OrdinalIgnoreCase);
     }
 
-    public static bool FilterByName(this TornFactionMember member, string name)
+    public static bool FilterByName(this FactionMemberData member, string name)
     {
         return member.Name.Contains(name, StringComparison.OrdinalIgnoreCase);
     }
 
-    public static bool FilterByLevel(this TornFactionMember member, string filter)
+    public static bool FilterByLevel(this FactionMemberData member, string filter)
     {
         return FilterByLevelInternal(member.Level, filter);
     }
 
-    public static bool FilterByBattleStats(this TornFactionMember _, string filter, ulong spyTotal)
+    public static bool FilterByBattleStats(this FactionMemberData _, string filter, ulong spyTotal)
     {
         return FilterByBattleStatsInternal(spyTotal, filter);
     }

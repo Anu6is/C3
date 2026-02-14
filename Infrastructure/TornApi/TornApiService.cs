@@ -7,7 +7,7 @@ using System.Text.Json;
 
 namespace C3.Infrastructure.TornApi;
 
-public sealed class TornApiService(HttpClient httpClient, ProtectedTokenStore TokenStore, ILogger<TornApiService> logger) : IDisposable
+public class TornApiService(HttpClient httpClient, ProtectedTokenStore TokenStore, ILogger<TornApiService> logger) : ITornApiService, IDisposable
 {
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 

@@ -1,5 +1,5 @@
-﻿@inject TornApiService ApiService
-@inject TornStatsApiService StatsService
+@using C3.Application.Interfaces
+@inject IFactionRepository FactionRepo
 @inject BrowserStorageService BrowserStore
 @inject FilterStateContainer FilterState
 @inject ISnackbar Snackbar
@@ -14,7 +14,7 @@
     }
     else
     {
-    @if (!_initialized || UserFaction?.Ranked_Wars.Count != 0)
+    @if (!_initialized || UserFaction?.RankedWars.Count != 0)
     {
         @ChildContent
     }
@@ -48,9 +48,9 @@
     private string? _monitorSubscriptionId;
     private int _monitorFailureCount;
 
-    public TornFaction? UserFaction { get; set; }
-    public TornFaction? RivalFaction { get; set; }
-    public Dictionary<int, Spy> Spies { get; set; } = [];
+    public FactionData? UserFaction { get; set; }
+    public FactionData? RivalFaction { get; set; }
+    public Dictionary<int, SpyData> Spies { get; set; } = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -64,7 +64,7 @@
         _errorMessage = null;
         var factionId = CurrentUser!.Faction.Faction_Id;
 
-        var result = await ApiService.GetFactionAsync(factionId);
+        var result = await FactionRepo.GetFactionDataAsync(factionId);
 
         if (result.IsFailure)
         {
@@ -76,18 +76,18 @@
 
         UserFaction = result.Value;
 
-        if (UserFaction!.Ranked_Wars.Count != 0)
+        if (UserFaction!.RankedWars.Count != 0)
         {
-            var war = UserFaction!.Ranked_Wars.First();
+            var war = UserFaction!.RankedWars.First();
 
-            WarSession.WarId = war.Key;
-            WarSession.StartTime = war.Value.War.Start;
+            WarSession.WarId = war.WarId;
+            WarSession.StartTime = war.StartTime;
 
             var filterOptions = await BrowserStore.GetFilterOptionsAsync();
 
             if (filterOptions is not null)
             {
-                if (filterOptions.WarId != war.Key)
+                if (filterOptions.WarId != war.WarId)
                 {
                     await BrowserStore.DeleteFilterOptionsAsync();
                 }
@@ -110,13 +110,13 @@
     {
         if (_monitorSubscriptionId != null) return;
 
-        var rivalId = UserFaction!.Ranked_Wars.First().Value.Factions.First(x => x.Key != UserFaction.Id).Key;
+        var rivalId = UserFaction!.RankedWars.First().FactionScores.First(x => x.Key != UserFaction.Id).Key;
 
-        var spiesResult = await StatsService.GetFactionSpiesAsync(rivalId);
+        var spiesResult = await FactionRepo.GetFactionSpiesAsync(rivalId);
 
         if (spiesResult.IsSuccess && spiesResult.Value is not null)
         {
-            var newSpies = spiesResult.Value.Faction.Members.Values.ToDictionary(member => member.Id, member => member.Spy);
+            var newSpies = spiesResult.Value;
             if (!AreSpiesEqual(Spies, newSpies))
             {
                 Spies = newSpies;
@@ -130,7 +130,7 @@
 
     private async Task TickWarMonitoring(int rivalId)
     {
-        var result = await ApiService.GetFactionAsync(rivalId);
+        var result = await FactionRepo.GetFactionDataAsync(rivalId);
 
         if (result.IsSuccess)
         {
@@ -143,7 +143,7 @@
                 StateHasChanged();
             }
 
-            if (RivalFaction!.Ranked_Wars.First().Value.War.End > 0)
+            if (RivalFaction!.RankedWars.First().EndTime > 0)
             {
                 if (_monitorSubscriptionId != null)
                 {
@@ -163,7 +163,7 @@
         }
     }
 
-    private bool HasFactionChanged(TornFaction? oldF, TornFaction? newF)
+    private bool HasFactionChanged(FactionData? oldF, FactionData? newF)
     {
         if (ReferenceEquals(oldF, newF)) return false;
         if (oldF == null || newF == null) return true;
@@ -176,16 +176,23 @@
                 return true;
         }
 
-        if (oldF.Ranked_Wars.Count != newF.Ranked_Wars.Count) return true;
-        foreach (var (warId, oldWar) in oldF.Ranked_Wars)
+        if (oldF.RankedWars.Count != newF.RankedWars.Count) return true;
+        for (int i = 0; i < oldF.RankedWars.Count; i++)
         {
-            if (!newF.Ranked_Wars.TryGetValue(warId, out var newWar)) return true;
-            if (oldWar.War != newWar.War) return true;
+            var oldWar = oldF.RankedWars[i];
+            var newWar = newF.RankedWars[i];
 
-            if (oldWar.Factions.Count != newWar.Factions.Count) return true;
-            foreach (var (fId, oldScore) in oldWar.Factions)
+            if (oldWar.WarId != newWar.WarId ||
+                oldWar.StartTime != newWar.StartTime ||
+                oldWar.EndTime != newWar.EndTime ||
+                oldWar.TargetScore != newWar.TargetScore ||
+                oldWar.WinnerFactionId != newWar.WinnerFactionId)
+                return true;
+
+            if (oldWar.FactionScores.Count != newWar.FactionScores.Count) return true;
+            foreach (var (fId, oldScore) in oldWar.FactionScores)
             {
-                if (!newWar.Factions.TryGetValue(fId, out var newScore) || oldScore != newScore)
+                if (!newWar.FactionScores.TryGetValue(fId, out var newScore) || oldScore != newScore)
                     return true;
             }
         }
@@ -193,7 +200,7 @@
         return false;
     }
 
-    private bool AreSpiesEqual(Dictionary<int, Spy> oldSpies, Dictionary<int, Spy> newSpies)
+    private bool AreSpiesEqual(Dictionary<int, SpyData> oldSpies, Dictionary<int, SpyData> newSpies)
     {
         if (oldSpies.Count != newSpies.Count) return false;
         foreach (var (id, oldSpy) in oldSpies)

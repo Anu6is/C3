@@ -7,8 +7,8 @@ namespace C3.Application.Services;
 
 public class FactionMemberService
 {
-    public Dictionary<int, TornFactionMember> FilterMembers(
-        Dictionary<int, TornFactionMember> allMembers,
+    public Dictionary<int, FactionMemberData> FilterMembers(
+        Dictionary<int, FactionMemberData> allMembers,
         MemberFilterSpecification specification)
     {
         return allMembers
@@ -17,8 +17,8 @@ public class FactionMemberService
     }
 
     public IEnumerable<FactionMemberDto> GetMemberDtos(
-        Dictionary<int, TornFactionMember> filteredMembers,
-        Dictionary<int, Spy> spies)
+        Dictionary<int, FactionMemberData> filteredMembers,
+        Dictionary<int, SpyData> spies)
     {
         return filteredMembers.Select(m =>
             FactionMemberMapper.ToDto(m.Key, m.Value, spies));
