@@ -118,21 +118,13 @@
     private IReadOnlyCollection<string> SelectedValues 
     {
         get => FilterState.SelectedValues;
-        set
-        {
-            FilterState.SelectedValues = value;
-            UpdateTableView();
-        }
+        set => FilterState.SelectedValues = value;
     }
 
     private bool Monitored 
     { 
         get => FilterState.IsMonitored;
-        set
-        {
-            FilterState.IsMonitored = value;
-            UpdateTableView();
-        } 
+        set => FilterState.IsMonitored = value;
     }
 
     private string? SearchString
@@ -207,8 +199,6 @@
             await _dataGrid!.SetSortAsync("Total Stats", SortDirection.Descending, x => SumStats(x.Key));
         else 
             await _dataGrid!.SetSortAsync("Level", SortDirection.Descending, x => x.Value.Level);
-
-        UpdateTableView();
     }
 
     private void UpdateTableView()

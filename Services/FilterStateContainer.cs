@@ -1,5 +1,6 @@
 using C3.Models;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace C3.Services;
 
@@ -12,6 +13,7 @@ public class FilterStateContainer
     private bool? _hasHigherStats;
     private string? _searchString;
     private List<int> _targets = [];
+    private IReadOnlyCollection<string> _cachedSelectedValues = new List<string>().AsReadOnly();
 
     public event Action? OnChange;
 
@@ -36,6 +38,7 @@ public class FilterStateContainer
             if (_isOkay != value)
             {
                 _isOkay = value;
+                UpdateSelectedValuesCache();
                 NotifyStateChanged();
             }
         }
@@ -49,6 +52,7 @@ public class FilterStateContainer
             if (_inHospital != value)
             {
                 _inHospital = value;
+                UpdateSelectedValuesCache();
                 NotifyStateChanged();
             }
         }
@@ -105,13 +109,7 @@ public class FilterStateContainer
 
     public IReadOnlyCollection<string> SelectedValues
     {
-        get
-        {
-            var selected = new List<string>();
-            if (IsOkay) selected.Add("Okay");
-            if (InHospital) selected.Add("Hospital");
-            return selected.AsReadOnly();
-        }
+        get => _cachedSelectedValues;
         set
         {
             var isOkay = value.Contains("Okay");
@@ -121,6 +119,7 @@ public class FilterStateContainer
             {
                 _isOkay = isOkay;
                 _inHospital = inHospital;
+                UpdateSelectedValuesCache();
                 NotifyStateChanged();
             }
         }
@@ -135,6 +134,7 @@ public class FilterStateContainer
         _hasHigherStats = options.HasHigherStats;
         _searchString = options.FilterString;
         _targets = options.Targets ?? [];
+        UpdateSelectedValuesCache();
         NotifyStateChanged();
     }
 
@@ -150,6 +150,14 @@ public class FilterStateContainer
             FilterString = _searchString,
             Targets = _targets
         };
+    }
+
+    private void UpdateSelectedValuesCache()
+    {
+        var selected = new List<string>();
+        if (_isOkay) selected.Add("Okay");
+        if (_inHospital) selected.Add("Hospital");
+        _cachedSelectedValues = selected.AsReadOnly();
     }
 
     private void NotifyStateChanged() => OnChange?.Invoke();
