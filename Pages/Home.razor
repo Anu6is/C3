@@ -210,7 +210,6 @@
     private async Task DebouncedSearchAsync(string? searchTerm)
     {
         _searchCts?.Cancel();
-        _searchCts?.Dispose();
         _searchCts = new CancellationTokenSource();
 
         try
