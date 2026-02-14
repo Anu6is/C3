@@ -209,6 +209,7 @@
         if (_monitorSubscriptionId != null)
         {
             TimerService.Unsubscribe(_monitorSubscriptionId);
+            _monitorSubscriptionId = null;
         }
     }
 }

@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace C3.Services;
 
-public class TimerService : IAsyncDisposable
+public class TimerService(ILogger<TimerService> logger) : IAsyncDisposable
 {
     private PeriodicTimer? _timer;
     private Task? _timerTask;
@@ -15,15 +16,19 @@ public class TimerService : IAsyncDisposable
     private readonly HashSet<Action> _pendingCallbacks = [];
     private bool _isProcessingCallbacks;
     private long _tickCount;
+    private readonly object _lock = new();
 
     public event Action? OnTick;
 
     public void Start()
     {
-        if (_timerTask is not null) return;
+        lock (_lock)
+        {
+            if (_timerTask is not null) return;
 
-        _timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
-        _timerTask = RunTimerAsync();
+            _timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
+            _timerTask = RunTimerAsync();
+        }
     }
 
     private async Task RunTimerAsync()
@@ -41,12 +46,12 @@ public class TimerService : IAsyncDisposable
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error in TimerService OnTick: {ex.Message}");
+                    logger.LogError(ex, "Error in TimerService OnTick");
                 }
 
                 // 2. Notify specific interval subscribers
                 List<TimerSubscription> subsToRun;
-                lock (_subscriptions)
+                lock (_lock)
                 {
                     subsToRun = _subscriptions.Values
                         .Where(s => _tickCount % s.IntervalTicks == 0)
@@ -68,7 +73,7 @@ public class TimerService : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"TimerService loop failed: {ex.Message}");
+            logger.LogError(ex, "TimerService loop failed");
         }
     }
 
@@ -80,7 +85,7 @@ public class TimerService : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error in TimerService subscription: {ex.Message}");
+            logger.LogError(ex, "Error in TimerService subscription");
         }
     }
 
@@ -91,7 +96,7 @@ public class TimerService : IAsyncDisposable
         try
         {
             Action[] callbacks;
-            lock (_pendingCallbacks)
+            lock (_lock)
             {
                 if (_pendingCallbacks.Count == 0) return;
                 callbacks = _pendingCallbacks.ToArray();
@@ -106,7 +111,7 @@ public class TimerService : IAsyncDisposable
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error in TimerService callback: {ex.Message}");
+                    logger.LogError(ex, "Error in TimerService callback");
                 }
             }
         }
@@ -127,8 +132,13 @@ public class TimerService : IAsyncDisposable
 
     public string Subscribe(Func<Task> action, int intervalTicks = 1)
     {
+        if (intervalTicks <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(intervalTicks), "Interval must be greater than zero.");
+        }
+
         var id = Guid.NewGuid().ToString();
-        lock (_subscriptions)
+        lock (_lock)
         {
             _subscriptions[id] = new TimerSubscription(action, intervalTicks);
         }
@@ -137,7 +147,7 @@ public class TimerService : IAsyncDisposable
 
     public void Unsubscribe(string id)
     {
-        lock (_subscriptions)
+        lock (_lock)
         {
             _subscriptions.Remove(id);
         }
@@ -145,7 +155,7 @@ public class TimerService : IAsyncDisposable
 
     public void RequestUpdate(Action callback)
     {
-        lock (_pendingCallbacks)
+        lock (_lock)
         {
             _pendingCallbacks.Add(callback);
         }
@@ -164,11 +174,10 @@ public class TimerService : IAsyncDisposable
             catch (OperationCanceledException) { }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error disposing TimerService: {ex.Message}");
+                logger.LogError(ex, "Error disposing TimerService");
             }
         }
         _cts.Dispose();
-        GC.SuppressFinalize(this);
     }
 
     private record TimerSubscription(Func<Task> Action, int IntervalTicks);

@@ -23,7 +23,7 @@ builder.Services.AddScoped<FilterStateContainer>();
 builder.Services.AddScoped<ProtectedTokenStore>();
 builder.Services.AddScoped<BrowserStorageService>();
 builder.Services.AddScoped<MemberFilterService>();
-builder.Services.AddScoped<TimerService>();
+builder.Services.AddSingleton<TimerService>();
 
 builder.Services.AddSubtleCrypto(options => options.Key = ProtectedTokenStore.Key);
 
