@@ -24,6 +24,6 @@ public class CustomFilterOptions
         IsMonitored = filterOptions.IsMonitored;
         HasHigherStats = filterOptions.HasHigherStats;
         FilterString = filterOptions.FilterString;
-        Targets = filterOptions.Targets;
+        Targets = filterOptions.Targets?.ToList() ?? [];
     }
 }
