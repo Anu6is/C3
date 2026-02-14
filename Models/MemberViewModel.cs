@@ -95,9 +95,9 @@ public record MemberViewModel(
 
     public static string FormatNumber(ulong number) => number switch
     {
-        >= 1_000_000_000 => $"{number / 1_000_000_000}B",
-        >= 1_000_000 => $"{number / 1_000_000}M",
-        >= 1_000 => $"{number / 1_000}K",
+        >= 1_000_000_000 => $"{(number / 1_000_000_000.0):0.#}B",
+        >= 1_000_000 => $"{(number / 1_000_000.0):0.#}M",
+        >= 1_000 => $"{(number / 1_000.0):0.#}K",
         _ => number.ToString()
     };
 }
