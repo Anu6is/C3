@@ -2,6 +2,7 @@ using Blazor.SubtleCrypto;
 using Blazored.LocalStorage;
 using Blazored.SessionStorage;
 using C3;
+using C3.Models;
 using C3.Services;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
@@ -18,7 +19,8 @@ builder.Services.AddMudServices();
 builder.Services.AddBlazoredLocalStorage();
 builder.Services.AddBlazoredSessionStorage();
 
-builder.Services.AddSingleton<WarSession>();
+builder.Services.AddScoped<WarSession>();
+builder.Services.AddScoped<CustomFilterOptions>();
 builder.Services.AddScoped<ProtectedTokenStore>();
 builder.Services.AddScoped<BrowserStorageService>();
 

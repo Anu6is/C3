@@ -1,6 +1,7 @@
 ﻿@page "/"
 
 @inject BrowserStorageService BrowserStore
+@inject CustomFilterOptions FilterOptions
 
 <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="4" Style="width:100%">
     <WarTracker />
@@ -10,7 +11,7 @@
         <ToolBarContent>
             <MudText Typo="Typo.h6">@Data?.RivalFaction?.Name</MudText>
             <MudSpacer />
-            <MudTextField @bind-Value="_searchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true" Margin="Margin.Dense"
+            <MudTextField @bind-Value="FilterOptions.FilterString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true" Margin="Margin.Dense"
                            AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-n4 px-4" Clearable="true" />
             <MudToggleIconButton Icon="@Icons.Material.Filled.KeyboardDoubleArrowDown" ToggledIcon="@Icons.Material.Filled.KeyboardDoubleArrowUp"
                                  Color="@(_hasHigherStats is null ? Color.Default : Color.Success)" ToggledColor="Color.Error"
@@ -112,10 +113,9 @@
     private MudDataGrid<KeyValuePair<int, TornFactionMember>>? _dataGrid;
     private Dictionary<int, TornFactionMember> RivalMembers = [];
 
-    private static bool _monitored;
-    private static bool? _hasHigherStats;
-    private static string? _searchString;
-    private static ICollection<object> _selectedValues = [];
+    private bool _monitored;
+    private bool? _hasHigherStats;
+    private ICollection<object> _selectedValues = [];
 
     private ICollection<object> SelectedValues 
     {
@@ -124,8 +124,8 @@
         {
             _selectedValues = value;
 
-            CustomFilterOptions.Instance.IsOkay = _selectedValues.Contains("Okay");
-            CustomFilterOptions.Instance.InHospital = _selectedValues.Contains("Hospital");
+            FilterOptions.IsOkay = _selectedValues.Contains("Okay");
+            FilterOptions.InHospital = _selectedValues.Contains("Hospital");
 
             UpdateTableView();
         }
@@ -138,7 +138,7 @@
         {
             _monitored = value;
 
-            CustomFilterOptions.Instance.IsMonitored = _monitored;
+            FilterOptions.IsMonitored = _monitored;
 
             UpdateTableView();
         } 
@@ -146,17 +146,17 @@
 
     private Func<KeyValuePair<int, TornFactionMember>, bool> _quickFilter => pair =>
     {
-        _searchString = _searchString?.Trim();
+        var searchString = FilterOptions.FilterString?.Trim();
 
-        if (string.IsNullOrWhiteSpace(_searchString) || _searchString.Length < 3) return true;
+        if (string.IsNullOrWhiteSpace(searchString) || searchString.Length < 3) return true;
 
-        if (pair.Value.FilterByStatus(_searchString)) return true;
+        if (pair.Value.FilterByStatus(searchString)) return true;
 
-        if (pair.Value.FilterByName(_searchString)) return true;
+        if (pair.Value.FilterByName(searchString)) return true;
 
-        if (pair.Value.FilterByLevel(_searchString)) return true;
+        if (pair.Value.FilterByLevel(searchString)) return true;
 
-        if (pair.Value.FilterByBattleStats(_searchString, SumStats(pair.Key))) return true;
+        if (pair.Value.FilterByBattleStats(searchString, SumStats(pair.Key))) return true;
 
         return false;
     };
@@ -170,21 +170,21 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        CustomFilterOptions.Instance.FilterString = _searchString;
-
         if (firstRender is false) return;
 
         var filterOptions = await BrowserStore.GetFilterOptionsAsync();
 
         if (filterOptions is not null)
         {
-            _searchString = filterOptions.FilterString;
-            _hasHigherStats = filterOptions.HasHigherStats;
+            FilterOptions.UpdateFrom(filterOptions);
 
-            if (filterOptions.IsOkay) _selectedValues.Add("Okay");
-            if (filterOptions.InHospital) _selectedValues.Add("Hospital");
+            _hasHigherStats = FilterOptions.HasHigherStats;
+            _monitored = FilterOptions.IsMonitored;
 
-            Monitored = filterOptions.IsMonitored;
+            var selected = new List<object>();
+            if (FilterOptions.IsOkay) selected.Add("Okay");
+            if (FilterOptions.InHospital) selected.Add("Hospital");
+            SelectedValues = selected;
         }
 
         await _dataGrid!.SetSortAsync("Level", SortDirection.Descending, x => x.Value.Level);
@@ -213,7 +213,7 @@
         else 
             await _dataGrid!.SetSortAsync("Level", SortDirection.Descending, x => x.Value.Level);
 
-        CustomFilterOptions.Instance.HasHigherStats = _hasHigherStats;
+        FilterOptions.HasHigherStats = _hasHigherStats;
 
         UpdateTableView();
     }
@@ -313,7 +313,7 @@
         else
             Data!.WarSession.FactionTargets.Remove(userId);
 
-        CustomFilterOptions.Instance.Targets = Data!.WarSession.FactionTargets;
+        FilterOptions.Targets = Data!.WarSession.FactionTargets;
 
         await BrowserStore.SaveSessionAsync(Data.WarSession);
     }
