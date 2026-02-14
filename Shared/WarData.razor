@@ -19,11 +19,13 @@
     else
     {
         <MudContainer Class="d-flex flex-column justify-center" MaxWidth="MaxWidth.Small" Style="height:100vh;">
-            <MudCard Class="pa-8" Elevation="2">
-                <MudCardContent Class="d-flex justify-center">
-                    <MudText Style="text-align:center" Typo="Typo.h3">YOUR FACTION IS NOT IN A WAR</MudText>
-                </MudCardContent>
-            </MudCard>
+            <EmptyState
+                Icon="@Icons.Material.Filled.Shield"
+                Title="No Active War"
+                Message="Your faction is not currently in a ranked war. This dashboard will activate when a war begins."
+                ActionText="Refresh Status"
+                ActionIcon="@Icons.Material.Filled.Refresh"
+                OnAction="GetWarDetailsAsync" />
         </MudContainer>
     }
     }

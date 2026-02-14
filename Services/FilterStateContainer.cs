@@ -156,6 +156,17 @@ public class FilterStateContainer
         };
     }
 
+    public void ResetFilters()
+    {
+        _isOkay = false;
+        _inHospital = false;
+        _isMonitored = false;
+        _hasHigherStats = null;
+        _searchString = string.Empty;
+        UpdateSelectedValuesCache();
+        NotifyStateChanged();
+    }
+
     private void UpdateSelectedValuesCache()
     {
         var selected = new List<string>();
