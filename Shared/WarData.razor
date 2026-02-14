@@ -12,29 +12,24 @@
     }
     else
     {
-    <Conditional Expression="@_initialized">
-        <TrueContent>
-            <Conditional Expression="@(UserFaction?.Ranked_Wars.Count != 0)">
-                <TrueContent>
-                    @ChildContent
-                </TrueContent>
-                <FalseContent>
-                    <MudContainer Class="d-flex flex-column justify-center" MaxWidth="MaxWidth.Small" Style="height:100vh;">
-                        <MudCard Class="pa-8" Elevation="2">
-                            <MudCardContent Class="d-flex justify-center">
-                                <MudText Style="text-align:center" Typo="Typo.h3">YOUR FACTION IS NOT IN A WAR</MudText>
-                            </MudCardContent>
-                        </MudCard>
-                    </MudContainer>
-                </FalseContent>
-            </Conditional>
-        </TrueContent>
-        <FalseContent>
-            <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="4" Style="width:100%; height:80vh">
-                <MudProgressCircular Color="Color.Default" Indeterminate="true" />
-            </MudStack>
-        </FalseContent>
-    </Conditional>
+    @if (!_initialized)
+    {
+        @ChildContent
+    }
+    else if (UserFaction?.Ranked_Wars.Count != 0)
+    {
+        @ChildContent
+    }
+    else
+    {
+        <MudContainer Class="d-flex flex-column justify-center" MaxWidth="MaxWidth.Small" Style="height:100vh;">
+            <MudCard Class="pa-8" Elevation="2">
+                <MudCardContent Class="d-flex justify-center">
+                    <MudText Style="text-align:center" Typo="Typo.h3">YOUR FACTION IS NOT IN A WAR</MudText>
+                </MudCardContent>
+            </MudCard>
+        </MudContainer>
+    }
     }
 </CascadingValue>
 
@@ -46,6 +41,7 @@
     [EditorRequired][Parameter] public required WarSession WarSession { get; set; }
 
     private const int MaxApiFailureRetries = 3;
+    public bool Initialized => _initialized;
     private bool _initialized;
     private string? _errorMessage;
     private PeriodicTimer Timer = new PeriodicTimer(TimeSpan.FromSeconds(5));

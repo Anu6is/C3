@@ -9,110 +9,126 @@
     <WarTracker />
 
     <AppErrorBoundary Title="Failed to Load War Data">
-    <MudDataGrid @ref="@_dataGrid" T="KeyValuePair<int, TornFactionMember>" Items="@RivalMembers" Style="width:100%;" Height="60vh" Loading="@(Data?.RivalFaction is null)"
-                 Class="mb-8" Dense="true" FixedHeader="true" FixedFooter="true" Filterable="false" Hover="true" SortMode="SortMode.Multiple" QuickFilter="@_quickFilter">
-        <ToolBarContent>
-            <MudText Typo="Typo.h6">@Data?.RivalFaction?.Name</MudText>
-            <MudSpacer />
-            <MudTextField @bind-Value="SearchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true" Margin="Margin.Dense"
-                           AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-n4 px-4" Clearable="true" />
-            <MudToggleIconButton Icon="@Icons.Material.Filled.KeyboardDoubleArrowDown" ToggledIcon="@Icons.Material.Filled.KeyboardDoubleArrowUp"
-                                 Color="@(HasHigherStats is null ? Color.Default : Color.Success)" ToggledColor="Color.Error"
-                                 Toggled="@(HasHigherStats ?? false)" ToggledChanged="@OnToggleChanged" />
-            <MudChipSet Class="d-none d-sm-flex" SelectionMode="SelectionMode.MultiSelection" CheckMark @bind-SelectedValues="@SelectedValues">
-                <MudChip Text="Okay" Color="Color.Primary" SelectedColor="Color.Success" Label="true" Size="Size.Medium" Style="width:80px;" Value="@("Okay")"/>
-                <MudChip Text="Hospital" Color="Color.Primary" SelectedColor="Color.Error" Label="true" Size="Size.Medium" Style="width:80px;" Value="@("Hospital")" />
-            </MudChipSet>
-            <MudChipSet Class="d-flex d-sm-none" SelectionMode="SelectionMode.MultiSelection" CheckMark @bind-SelectedValues="@SelectedValues">
-                <MudChip Color="Color.Primary" SelectedColor="Color.Success" Label="true" Size="Size.Medium" Value="@("Okay")"
-                         Icon="@Icons.Material.Filled.AccessibilityNew" CheckedIcon="@Icons.Material.Filled.AccessibilityNew" />
-                <MudChip Color="Color.Primary" SelectedColor="Color.Error" Label="true" Size="Size.Medium" Value="@("Hospital")"
-                         Icon="@Icons.Material.Filled.MedicalInformation" CheckedIcon="@Icons.Material.Filled.MedicalInformation" />
-            </MudChipSet>
-        </ToolBarContent>
-        <Columns>
-            <PropertyColumn Property="@(x => x.Key)" Hidden="true" />
-            <TemplateColumn Title="Name" SortBy="@(x => x.Value.Name)">
-                <CellTemplate>
-                    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Style="width:200px;">
-                        <MudBadge Class="pl-4" Color="@(StatusColor(context.Item.Value.Last_Action.Status))" Overlap="false" Origin="Origin.CenterLeft" Dot="true">
-                            <MudLink Color="Color.Info" Href="@($"https://www.torn.com/profiles.php?XID={@context.Item.Key}")" Target="_blank">
-                                @context.Item.Value.Name
-                            </MudLink>
-                        </MudBadge>
-                        <MudIconButton Icon="@Icons.Material.Filled.LocationSearching" Color="Color.Error" Size="Size.Small" Title="Attack"
-                                       Href="@($"https://www.torn.com/loader.php?sid=attack&user2ID={@context.Item.Key}")"
-                                       Target="_blank"/>
-                    </MudStack>
-                </CellTemplate>
-            </TemplateColumn>
-            <PropertyColumn Property="@(x => x.Value.Level)" />
-            <TemplateColumn Title="Total Stats" SortBy="@(x => SumStats(x.Key))">
-                <CellTemplate>
-                    <MudTooltip Color="Color.Primary" Arrow="true" Placement="Placement.Top" ShowOnFocus="false"
-                                ShowOnClick="@HasStatValues(context.Item.Key)" ShowOnHover="@HasStatValues(context.Item.Key)">
-                        <ChildContent>
-                            <MudText Color="@BattleStatusColor(context.Item.Key, "sum")">@GetBattleStats(context.Item.Key)</MudText>
-                        </ChildContent>
-                        <TooltipContent>
-                            <MudText Typo="Typo.caption" Color="@BattleStatusColor(context.Item.Key, "str")">
-                                @($"Strength: {GetBattleStats(context.Item.Key, "str")}")
-                            </MudText><br />
-                            <MudText Typo="Typo.caption" Color="@BattleStatusColor(context.Item.Key, "def")">
-                                @($"Defense: {GetBattleStats(context.Item.Key, "def")}")
-                            </MudText><br />
-                            <MudText Typo="Typo.caption" Color="@BattleStatusColor(context.Item.Key, "spd")">
-                                @($"Speed: {GetBattleStats(context.Item.Key, "spd")}")
-                            </MudText><br />
-                            <MudText Typo="Typo.caption" Color="@BattleStatusColor(context.Item.Key, "dex")">
-                                @($"Dexterity: {GetBattleStats(context.Item.Key, "dex")}")
-                            </MudText>
-                        </TooltipContent>
-                    </MudTooltip>
-                </CellTemplate>
-            </TemplateColumn>
-            <TemplateColumn Title="State" SortBy="@(x => x.Value.Status.State)">
-                <CellTemplate>
-                    <MudChip Color="@StateColor(context.Item.Value.Status.State)" Text="@context.Item.Value.Status.State" Size="Size.Small"/>
-                </CellTemplate>
-            </TemplateColumn>
-            <TemplateColumn Title="Until" SortBy="@(x => x.Value.Status.Until)">
-                <CellTemplate>
-                    <Countdown Seconds="@context.Item.Value.Status.Until" />
-                </CellTemplate>
-            </TemplateColumn>
-            <TemplateColumn Title="Monitor" SortBy="@(x => Data!.WarSession.FactionTargets.Contains(x.Key))">
-                <CellTemplate>
-                    <MudToggleIconButton Variant="Variant.Filled" Toggled="@(Data!.WarSession.FactionTargets.Contains(context.Item.Key))"
-                                            Title="Monitor" ToggledTitle="Ignore"
-                                            Size="Size.Small" ToggledSize="Size.Small"
-                                            Color="Color.Default" ToggledColor="Color.Error" 
-                                            ToggledChanged="@(async (x) => await ToggleMonitoringAsync(x, context.Item.Key))"
-                                            Icon="@Icons.Material.Filled.CrisisAlert" ToggledIcon="@Icons.Material.Filled.CrisisAlert" />
-                </CellTemplate>
-            </TemplateColumn>
-        </Columns>
-        <PagerContent>
-            <MudHidden Breakpoint="Breakpoint.Xs">
-                <MudStack Row="true" Class="pl-8" AlignItems="AlignItems.Center" Style="width:100%">
-                    <MudSwitch @bind-Value="@Monitored" Color="Color.Error">Monitored Only</MudSwitch>
-                    <MudSpacer />
-                    <MudDataGridPager T="KeyValuePair<int, TornFactionMember>" />
-                </MudStack>
-            </MudHidden>
-            <MudHidden Breakpoint="Breakpoint.Xs" Invert="true">
-                <MudStack Row="false" Class="pt-4" AlignItems="AlignItems.Center" Style="width:100%">
-                    <MudSwitch @bind-Value="@Monitored" Color="Color.Error" Size="Size.Small">Monitored Only</MudSwitch>
-                    <MudDataGridPager T="KeyValuePair<int, TornFactionMember>" />
-                </MudStack>
-            </MudHidden>
-        </PagerContent>
-    </MudDataGrid>
+        @switch (_dataState)
+        {
+            case LoadingState.Loading:
+                <DataGridSkeleton />
+                break;
+            case LoadingState.Loaded:
+                <MudDataGrid @ref="@_dataGrid" T="KeyValuePair<int, TornFactionMember>" Items="@RivalMembers" Style="width:100%;" Height="60vh"
+                             Class="mb-8" Dense="true" FixedHeader="true" FixedFooter="true" Filterable="false" Hover="true" SortMode="SortMode.Multiple" QuickFilter="@_quickFilter">
+                    <ToolBarContent>
+                        <MudText Typo="Typo.h6">@Data?.RivalFaction?.Name</MudText>
+                        <MudSpacer />
+                        <MudTextField @bind-Value="SearchString" Placeholder="Search" Adornment="Adornment.Start" Immediate="true" Margin="Margin.Dense"
+                                      AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-n4 px-4" Clearable="true" />
+                        <MudToggleIconButton Icon="@Icons.Material.Filled.KeyboardDoubleArrowDown" ToggledIcon="@Icons.Material.Filled.KeyboardDoubleArrowUp"
+                                             Color="@(HasHigherStats is null ? Color.Default : Color.Success)" ToggledColor="Color.Error"
+                                             Toggled="@(HasHigherStats ?? false)" ToggledChanged="@OnToggleChanged" />
+                        <MudChipSet Class="d-none d-sm-flex" SelectionMode="SelectionMode.MultiSelection" CheckMark @bind-SelectedValues="@SelectedValues">
+                            <MudChip Text="Okay" Color="Color.Primary" SelectedColor="Color.Success" Label="true" Size="Size.Medium" Style="width:80px;" Value="@("Okay")" />
+                            <MudChip Text="Hospital" Color="Color.Primary" SelectedColor="Color.Error" Label="true" Size="Size.Medium" Style="width:80px;" Value="@("Hospital")" />
+                        </MudChipSet>
+                        <MudChipSet Class="d-flex d-sm-none" SelectionMode="SelectionMode.MultiSelection" CheckMark @bind-SelectedValues="@SelectedValues">
+                            <MudChip Color="Color.Primary" SelectedColor="Color.Success" Label="true" Size="Size.Medium" Value="@("Okay")"
+                                     Icon="@Icons.Material.Filled.AccessibilityNew" CheckedIcon="@Icons.Material.Filled.AccessibilityNew" />
+                            <MudChip Color="Color.Primary" SelectedColor="Color.Error" Label="true" Size="Size.Medium" Value="@("Hospital")"
+                                     Icon="@Icons.Material.Filled.MedicalInformation" CheckedIcon="@Icons.Material.Filled.MedicalInformation" />
+                        </MudChipSet>
+                    </ToolBarContent>
+                    <Columns>
+                        <PropertyColumn Property="@(x => x.Key)" Hidden="true" />
+                        <TemplateColumn Title="Name" SortBy="@(x => x.Value.Name)">
+                            <CellTemplate>
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Style="width:200px;">
+                                    <MudBadge Class="pl-4" Color="@(StatusColor(context.Item.Value.Last_Action.Status))" Overlap="false" Origin="Origin.CenterLeft" Dot="true">
+                                        <MudLink Color="Color.Info" Href="@($"https://www.torn.com/profiles.php?XID={@context.Item.Key}")" Target="_blank">
+                                            @context.Item.Value.Name
+                                        </MudLink>
+                                    </MudBadge>
+                                    <MudIconButton Icon="@Icons.Material.Filled.LocationSearching" Color="Color.Error" Size="Size.Small" Title="Attack"
+                                                   Href="@($"https://www.torn.com/loader.php?sid=attack&user2ID={@context.Item.Key}")"
+                                                   Target="_blank" />
+                                </MudStack>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <PropertyColumn Property="@(x => x.Value.Level)" />
+                        <TemplateColumn Title="Total Stats" SortBy="@(x => SumStats(x.Key))">
+                            <CellTemplate>
+                                <MudTooltip Color="Color.Primary" Arrow="true" Placement="Placement.Top" ShowOnFocus="false"
+                                            ShowOnClick="@HasStatValues(context.Item.Key)" ShowOnHover="@HasStatValues(context.Item.Key)">
+                                    <ChildContent>
+                                        <MudText Color="@BattleStatusColor(context.Item.Key, "sum")">@GetBattleStats(context.Item.Key)</MudText>
+                                    </ChildContent>
+                                    <TooltipContent>
+                                        <MudText Typo="Typo.caption" Color="@BattleStatusColor(context.Item.Key, "str")">
+                                            @($"Strength: {GetBattleStats(context.Item.Key, "str")}")
+                                        </MudText><br />
+                                        <MudText Typo="Typo.caption" Color="@BattleStatusColor(context.Item.Key, "def")">
+                                            @($"Defense: {GetBattleStats(context.Item.Key, "def")}")
+                                        </MudText><br />
+                                        <MudText Typo="Typo.caption" Color="@BattleStatusColor(context.Item.Key, "spd")">
+                                            @($"Speed: {GetBattleStats(context.Item.Key, "spd")}")
+                                        </MudText><br />
+                                        <MudText Typo="Typo.caption" Color="@BattleStatusColor(context.Item.Key, "dex")">
+                                            @($"Dexterity: {GetBattleStats(context.Item.Key, "dex")}")
+                                        </MudText>
+                                    </TooltipContent>
+                                </MudTooltip>
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="State" SortBy="@(x => x.Value.Status.State)">
+                            <CellTemplate>
+                                <MudChip Color="@StateColor(context.Item.Value.Status.State)" Text="@context.Item.Value.Status.State" Size="Size.Small" />
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Until" SortBy="@(x => x.Value.Status.Until)">
+                            <CellTemplate>
+                                <Countdown Seconds="@context.Item.Value.Status.Until" />
+                            </CellTemplate>
+                        </TemplateColumn>
+                        <TemplateColumn Title="Monitor" SortBy="@(x => Data!.WarSession.FactionTargets.Contains(x.Key))">
+                            <CellTemplate>
+                                <MudToggleIconButton Variant="Variant.Filled" Toggled="@(Data!.WarSession.FactionTargets.Contains(context.Item.Key))"
+                                                     Title="Monitor" ToggledTitle="Ignore"
+                                                     Size="Size.Small" ToggledSize="Size.Small"
+                                                     Color="Color.Default" ToggledColor="Color.Error"
+                                                     ToggledChanged="@(async (x) => await ToggleMonitoringAsync(x, context.Item.Key))"
+                                                     Icon="@Icons.Material.Filled.CrisisAlert" ToggledIcon="@Icons.Material.Filled.CrisisAlert" />
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                    <PagerContent>
+                        <MudHidden Breakpoint="Breakpoint.Xs">
+                            <MudStack Row="true" Class="pl-8" AlignItems="AlignItems.Center" Style="width:100%">
+                                <MudSwitch @bind-Value="@Monitored" Color="Color.Error">Monitored Only</MudSwitch>
+                                <MudSpacer />
+                                <MudDataGridPager T="KeyValuePair<int, TornFactionMember>" />
+                            </MudStack>
+                        </MudHidden>
+                        <MudHidden Breakpoint="Breakpoint.Xs" Invert="true">
+                            <MudStack Row="false" Class="pt-4" AlignItems="AlignItems.Center" Style="width:100%">
+                                <MudSwitch @bind-Value="@Monitored" Color="Color.Error" Size="Size.Small">Monitored Only</MudSwitch>
+                                <MudDataGridPager T="KeyValuePair<int, TornFactionMember>" />
+                            </MudStack>
+                        </MudHidden>
+                    </PagerContent>
+                </MudDataGrid>
+                break;
+            case LoadingState.Error:
+                <ErrorState Title="Failed to load faction data" OnRetry="() => OnInitializedAsync()" />
+                break;
+        }
     </AppErrorBoundary>
 </MudStack>
 
 @code {
     [CascadingParameter] WarData? Data { get; set; }
+
+    private LoadingState _dataState =>
+        Data == null || !Data.Initialized || Data.RivalFaction == null
+            ? LoadingState.Loading
+            : LoadingState.Loaded;
 
     private MudDataGrid<KeyValuePair<int, TornFactionMember>>? _dataGrid;
     private Dictionary<int, TornFactionMember> RivalMembers = [];
@@ -172,11 +188,14 @@
         StateHasChanged();
     }
 
+    private bool _sortSet;
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender is false) return;
-
-        await _dataGrid!.SetSortAsync("Level", SortDirection.Descending, x => x.Value.Level);
+        if (_dataState == LoadingState.Loaded && _dataGrid != null && !_sortSet)
+        {
+            _sortSet = true;
+            await _dataGrid.SetSortAsync("Level", SortDirection.Descending, x => x.Value.Level);
+        }
 
         await base.OnAfterRenderAsync(firstRender);
     }
