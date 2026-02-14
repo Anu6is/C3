@@ -40,6 +40,7 @@
 
     private const int MaxApiFailureRetries = 3;
     public bool Initialized => _initialized;
+    public WarDataChangeTracker ChangeTracker { get; } = new();
     private bool _initialized;
     private string? _errorMessage;
     private PeriodicTimer Timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
@@ -113,7 +114,15 @@
         var spiesResult = await StatsService.GetFactionSpiesAsync(rivalId);
 
         if (spiesResult.IsSuccess && spiesResult.Value is not null)
-            Spies = spiesResult.Value.Faction.Members.Values.ToDictionary(member => member.Id, member => member.Spy);
+        {
+            var newSpies = spiesResult.Value.Faction.Members.Values.ToDictionary(member => member.Id, member => member.Spy);
+            if (!AreSpiesEqual(Spies, newSpies))
+            {
+                Spies = newSpies;
+                ChangeTracker.NotifySpiesChanged();
+                StateHasChanged();
+            }
+        }
 
         int failureCount = 0;
         while (await Timer.WaitForNextTickAsync())
@@ -123,7 +132,14 @@
             if (result.IsSuccess)
             {
                 failureCount = 0;
-                RivalFaction = result.Value;
+                var newFaction = result.Value;
+                if (HasFactionChanged(RivalFaction, newFaction))
+                {
+                    RivalFaction = newFaction;
+                    ChangeTracker.NotifyMembersChanged();
+                    StateHasChanged();
+                }
+
                 if (RivalFaction!.Ranked_Wars.First().Value.War.End > 0) Timer.Dispose();
             }
             else
@@ -135,8 +151,47 @@
                     Snackbar.Add($"Failed to update war progress: {result.Error}", Severity.Error);
                 }
             }
-
-            StateHasChanged();
         }
+    }
+
+    private bool HasFactionChanged(TornFaction? oldF, TornFaction? newF)
+    {
+        if (ReferenceEquals(oldF, newF)) return false;
+        if (oldF == null || newF == null) return true;
+
+        if (oldF.Members.Count != newF.Members.Count) return true;
+
+        foreach (var (id, oldMember) in oldF.Members)
+        {
+            if (!newF.Members.TryGetValue(id, out var newMember) || oldMember != newMember)
+                return true;
+        }
+
+        if (oldF.Ranked_Wars.Count != newF.Ranked_Wars.Count) return true;
+        foreach (var (warId, oldWar) in oldF.Ranked_Wars)
+        {
+            if (!newF.Ranked_Wars.TryGetValue(warId, out var newWar)) return true;
+            if (oldWar.War != newWar.War) return true;
+
+            if (oldWar.Factions.Count != newWar.Factions.Count) return true;
+            foreach (var (fId, oldScore) in oldWar.Factions)
+            {
+                if (!newWar.Factions.TryGetValue(fId, out var newScore) || oldScore != newScore)
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
+    private bool AreSpiesEqual(Dictionary<int, Spy> oldSpies, Dictionary<int, Spy> newSpies)
+    {
+        if (oldSpies.Count != newSpies.Count) return false;
+        foreach (var (id, oldSpy) in oldSpies)
+        {
+            if (!newSpies.TryGetValue(id, out var newSpy) || oldSpy != newSpy)
+                return false;
+        }
+        return true;
     }
 }
