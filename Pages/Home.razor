@@ -31,7 +31,7 @@
                 <DataGridSkeleton />
                 break;
             case LoadingState.Loaded:
-                if (RivalMembers.Count == 0)
+                if (_viewModels.Count == 0)
                 {
                     if (HasHigherStats.HasValue && (Data?.Spies.Count ?? 0) == 0)
                     {
@@ -56,7 +56,7 @@
                 }
                 else
                 {
-                    <MudDataGrid @ref="@_dataGrid" T="KeyValuePair<int, TornFactionMember>" Items="@RivalMembers" Style="width:100%;" Height="60vh"
+                    <MudDataGrid @ref="@_dataGrid" T="MemberViewModel" Items="@_viewModels" Style="width:100%;" Height="60vh" Virtualize="true"
                                  Class="mb-8" Dense="true" FixedHeader="true" FixedFooter="true" Filterable="false" Hover="true" SortMode="SortMode.Multiple" QuickFilter="@_quickFilter">
                         <ToolBarContent>
                             <MudText Typo="Typo.h6">@Data?.RivalFaction?.Name</MudText>
@@ -68,79 +68,79 @@
                                                  Toggled="@(HasHigherStats ?? false)" ToggledChanged="@OnToggleChanged" />
                             <MudChipSet Class="d-none d-sm-flex" SelectionMode="SelectionMode.MultiSelection" CheckMark @bind-SelectedValues="@SelectedValues">
                                 <MudChip Text="Okay" Color="Color.Primary" SelectedColor="Color.Success" Label="true" Size="Size.Medium" Style="width:80px;" Value="@("Okay")"
-                                         Icon="@StateIcon("Okay")" aria-label="Filter by Okay status" />
+                                         Icon="@Icons.Material.Filled.CheckCircle" aria-label="Filter by Okay status" />
                                 <MudChip Text="Hospital" Color="Color.Primary" SelectedColor="Color.Error" Label="true" Size="Size.Medium" Style="width:80px;" Value="@("Hospital")"
-                                         Icon="@StateIcon("Hospital")" aria-label="Filter by Hospital status" />
+                                         Icon="@Icons.Material.Filled.LocalHospital" aria-label="Filter by Hospital status" />
                             </MudChipSet>
                             <MudChipSet Class="d-flex d-sm-none" SelectionMode="SelectionMode.MultiSelection" CheckMark @bind-SelectedValues="@SelectedValues">
                                 <MudChip Color="Color.Primary" SelectedColor="Color.Success" Label="true" Size="Size.Medium" Value="@("Okay")"
-                                         Icon="@StateIcon("Okay")" CheckedIcon="@StateIcon("Okay")" aria-label="Filter by Okay status" />
+                                         Icon="@Icons.Material.Filled.CheckCircle" CheckedIcon="@Icons.Material.Filled.CheckCircle" aria-label="Filter by Okay status" />
                                 <MudChip Color="Color.Primary" SelectedColor="Color.Error" Label="true" Size="Size.Medium" Value="@("Hospital")"
-                                         Icon="@StateIcon("Hospital")" CheckedIcon="@StateIcon("Hospital")" aria-label="Filter by Hospital status" />
+                                         Icon="@Icons.Material.Filled.LocalHospital" CheckedIcon="@Icons.Material.Filled.LocalHospital" aria-label="Filter by Hospital status" />
                             </MudChipSet>
                         </ToolBarContent>
                         <Columns>
-                            <PropertyColumn Property="@(x => x.Key)" Hidden="true" />
-                            <TemplateColumn Title="Name" SortBy="@(x => x.Value.Name)">
+                            <PropertyColumn Property="@(x => x.Id)" Hidden="true" />
+                            <TemplateColumn Title="Name" SortBy="@(x => x.Name)">
                                 <CellTemplate>
                                     <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.SpaceBetween" Style="width:200px;">
-                                        <MudBadge Class="pl-4" Color="@(StatusColor(context.Item.Value.Last_Action.Status))" Overlap="false" Origin="Origin.CenterLeft" Dot="true">
-                                            <MudLink Color="Color.Info" Href="@($"https://www.torn.com/profiles.php?XID={@context.Item.Key}")" Target="_blank">
-                                                @context.Item.Value.Name
+                                        <MudBadge Class="pl-4" Color="@context.Item.StatusColor" Overlap="false" Origin="Origin.CenterLeft" Dot="true">
+                                            <MudLink Color="Color.Info" Href="@($"https://www.torn.com/profiles.php?XID={context.Item.Id}")" Target="_blank">
+                                                @context.Item.Name
                                             </MudLink>
                                         </MudBadge>
                                         <MudIconButton Icon="@Icons.Material.Filled.LocationSearching" Color="Color.Error" Size="Size.Small" Title="Attack"
-                                                       Href="@($"https://www.torn.com/loader.php?sid=attack&user2ID={@context.Item.Key}")"
+                                                       Href="@($"https://www.torn.com/loader.php?sid=attack&user2ID={context.Item.Id}")"
                                                        Target="_blank" />
                                     </MudStack>
                                 </CellTemplate>
                             </TemplateColumn>
-                            <PropertyColumn Property="@(x => x.Value.Level)" />
-                            <TemplateColumn Title="Total Stats" SortBy="@(x => SumStats(x.Key))">
+                            <PropertyColumn Property="@(x => x.Level)" />
+                            <TemplateColumn Title="Total Stats" SortBy="@(x => x.TotalStats)">
                                 <CellTemplate>
                                     <MudTooltip Color="Color.Primary" Arrow="true" Placement="Placement.Top" ShowOnFocus="false"
-                                                ShowOnClick="@HasStatValues(context.Item.Key)" ShowOnHover="@HasStatValues(context.Item.Key)">
+                                                ShowOnClick="@context.Item.HasStatValues" ShowOnHover="@context.Item.HasStatValues">
                                         <ChildContent>
-                                            <MudText Color="@BattleStatusColor(context.Item.Key, "sum")">@GetBattleStats(context.Item.Key)</MudText>
+                                            <MudText Color="@context.Item.TotalStatsColor">@context.Item.TotalStatsText</MudText>
                                         </ChildContent>
                                         <TooltipContent>
-                                            <MudText Typo="Typo.caption" Color="@BattleStatusColor(context.Item.Key, "str")">
-                                                @($"Strength: {GetBattleStats(context.Item.Key, "str")}")
+                                            <MudText Typo="Typo.caption" Color="@context.Item.StrengthColor">
+                                                @($"Strength: {context.Item.StrengthText}")
                                             </MudText><br />
-                                            <MudText Typo="Typo.caption" Color="@BattleStatusColor(context.Item.Key, "def")">
-                                                @($"Defense: {GetBattleStats(context.Item.Key, "def")}")
+                                            <MudText Typo="Typo.caption" Color="@context.Item.DefenseColor">
+                                                @($"Defense: {context.Item.DefenseText}")
                                             </MudText><br />
-                                            <MudText Typo="Typo.caption" Color="@BattleStatusColor(context.Item.Key, "spd")">
-                                                @($"Speed: {GetBattleStats(context.Item.Key, "spd")}")
+                                            <MudText Typo="Typo.caption" Color="@context.Item.SpeedColor">
+                                                @($"Speed: {context.Item.SpeedText}")
                                             </MudText><br />
-                                            <MudText Typo="Typo.caption" Color="@BattleStatusColor(context.Item.Key, "dex")">
-                                                @($"Dexterity: {GetBattleStats(context.Item.Key, "dex")}")
+                                            <MudText Typo="Typo.caption" Color="@context.Item.DexterityColor">
+                                                @($"Dexterity: {context.Item.DexterityText}")
                                             </MudText>
                                         </TooltipContent>
                                     </MudTooltip>
                                 </CellTemplate>
                             </TemplateColumn>
-                            <TemplateColumn Title="State" SortBy="@(x => x.Value.Status.State)">
+                            <TemplateColumn Title="State" SortBy="@(x => x.State)">
                                 <CellTemplate>
-                                    <MudChip Color="@StateColor(context.Item.Value.Status.State)"
-                                             Icon="@StateIcon(context.Item.Value.Status.State)"
-                                             Text="@context.Item.Value.Status.State"
+                                    <MudChip Color="@context.Item.StateColor"
+                                             Icon="@context.Item.StateIcon"
+                                             Text="@context.Item.State"
                                              Size="Size.Small"
-                                             aria-label="@($"Status: {context.Item.Value.Status.State}")" />
+                                             aria-label="@($"Status: {context.Item.State}")" />
                                 </CellTemplate>
                             </TemplateColumn>
-                            <TemplateColumn Title="Until" SortBy="@(x => x.Value.Status.Until)">
+                            <TemplateColumn Title="Until" SortBy="@(x => x.Until)">
                                 <CellTemplate>
-                                    <Countdown Seconds="@context.Item.Value.Status.Until" />
+                                    <Countdown Seconds="@context.Item.Until" />
                                 </CellTemplate>
                             </TemplateColumn>
-                            <TemplateColumn Title="Monitor" SortBy="@(x => Data!.WarSession.FactionTargets.Contains(x.Key))">
+                            <TemplateColumn Title="Monitor" SortBy="@(x => x.IsMonitored)">
                                 <CellTemplate>
-                                    <MudToggleIconButton Variant="Variant.Filled" Toggled="@(Data!.WarSession.FactionTargets.Contains(context.Item.Key))"
+                                    <MudToggleIconButton Variant="Variant.Filled" Toggled="@context.Item.IsMonitored"
                                                          Title="Monitor" ToggledTitle="Ignore"
                                                          Size="Size.Small" ToggledSize="Size.Small"
                                                          Color="Color.Default" ToggledColor="Color.Error"
-                                                         ToggledChanged="@(async (x) => await ToggleMonitoringAsync(x, context.Item.Key))"
+                                                         ToggledChanged="@(async (x) => await ToggleMonitoringAsync(x, context.Item.Id))"
                                                          Icon="@Icons.Material.Filled.CrisisAlert" ToggledIcon="@Icons.Material.Filled.CrisisAlert" />
                                 </CellTemplate>
                             </TemplateColumn>
@@ -150,13 +150,13 @@
                                 <MudStack Row="true" Class="pl-8" AlignItems="AlignItems.Center" Style="width:100%">
                                     <MudSwitch @bind-Value="@Monitored" Color="Color.Error">Monitored Only</MudSwitch>
                                     <MudSpacer />
-                                    <MudDataGridPager T="KeyValuePair<int, TornFactionMember>" />
+                                    <MudDataGridPager T="MemberViewModel" />
                                 </MudStack>
                             </MudHidden>
                             <MudHidden Breakpoint="Breakpoint.Xs" Invert="true">
                                 <MudStack Row="false" Class="pt-4" AlignItems="AlignItems.Center" Style="width:100%">
                                     <MudSwitch @bind-Value="@Monitored" Color="Color.Error" Size="Size.Small">Monitored Only</MudSwitch>
-                                    <MudDataGridPager T="KeyValuePair<int, TornFactionMember>" />
+                                    <MudDataGridPager T="MemberViewModel" />
                                 </MudStack>
                             </MudHidden>
                         </PagerContent>
@@ -178,15 +178,14 @@
             ? LoadingState.Loading
             : LoadingState.Loaded;
 
-    private MudDataGrid<KeyValuePair<int, TornFactionMember>>? _dataGrid;
+    private MudDataGrid<MemberViewModel>? _dataGrid;
     private MudTextField<string>? _searchField;
     private MudMessageBox? _spyInfoBox;
-    private Dictionary<int, TornFactionMember> RivalMembers = [];
+    private List<MemberViewModel> _viewModels = [];
     private string? _searchInput;
     private CancellationTokenSource? _searchCts;
     private int _lastDataVersion;
     private bool _filterChanged;
-    private readonly Dictionary<(int Id, ulong Value), string> _formattedStatsCache = [];
 
     private IReadOnlyCollection<string> SelectedValues 
     {
@@ -233,19 +232,19 @@
         set => FilterState.HasHigherStats = value;
     }
 
-    private Func<KeyValuePair<int, TornFactionMember>, bool> _quickFilter => pair =>
+    private Func<MemberViewModel, bool> _quickFilter => vm =>
     {
         var search = FilterState.SearchString?.Trim();
 
         if (string.IsNullOrWhiteSpace(search) || search.Length < 3) return true;
 
-        if (pair.Value.FilterByStatus(search)) return true;
+        if (vm.FilterByStatus(search)) return true;
 
-        if (pair.Value.FilterByName(search)) return true;
+        if (vm.FilterByName(search)) return true;
 
-        if (pair.Value.FilterByLevel(search)) return true;
+        if (vm.FilterByLevel(search)) return true;
 
-        if (pair.Value.FilterByBattleStats(search, SumStats(pair.Key))) return true;
+        if (vm.FilterByBattleStats(search)) return true;
 
         return false;
     };
@@ -276,7 +275,7 @@
         if (_dataState == LoadingState.Loaded && _dataGrid != null && !_sortSet)
         {
             _sortSet = true;
-            await _dataGrid.SetSortAsync("Level", SortDirection.Descending, x => x.Value.Level);
+            await _dataGrid.SetSortAsync("Level", SortDirection.Descending, x => x.Level);
         }
 
         await base.OnAfterRenderAsync(firstRender);
@@ -286,7 +285,6 @@
     {
         if (Data?.ChangeTracker.Version != _lastDataVersion)
         {
-            _formattedStatsCache.Clear();
             UpdateTableView();
         }
 
@@ -316,9 +314,9 @@
         if (_dataGrid != null)
         {
             if (HasHigherStats is not null)
-                await _dataGrid.SetSortAsync("Total Stats", SortDirection.Descending, x => SumStats(x.Key));
+                await _dataGrid.SetSortAsync("Total Stats", SortDirection.Descending, x => x.TotalStats);
             else
-                await _dataGrid.SetSortAsync("Level", SortDirection.Descending, x => x.Value.Level);
+                await _dataGrid.SetSortAsync("Level", SortDirection.Descending, x => x.Level);
         }
     }
 
@@ -349,7 +347,7 @@
     {
         if (Data?.CurrentUser is null || Data?.RivalFaction?.Members is null)
         {
-            RivalMembers = [];
+            _viewModels = [];
             return;
         }
 
@@ -360,99 +358,46 @@
             MonitoredTargets: Data.WarSession.FactionTargets.ToList()
         );
 
-        RivalMembers = FilterService.FilterMembers(
+        var filteredMembers = FilterService.FilterMembers(
             Data.RivalFaction.Members,
             criteria,
             Data.Spies,
             Data.CurrentUser.Stats
         );
-    }
 
-    private Color StatusColor(string status) => status switch
-    {
-        "Online" => Color.Success,
-        "Idle" => Color.Warning,
-        _ => Color.Default
-    };
-
-    private Color StateColor(string state) => state switch
-    {
-        "Okay" => Color.Success,
-        "Jail" => Color.Warning,
-        "Hospital" => Color.Error,
-        _ => Color.Info
-    };
-
-    private string StateIcon(string state) => state switch
-    {
-        "Okay" => Icons.Material.Filled.CheckCircle,
-        "Jail" => Icons.Material.Filled.Gavel,
-        "Hospital" => Icons.Material.Filled.LocalHospital,
-        "Traveling" => Icons.Material.Filled.Flight,
-        "Abroad" => Icons.Material.Filled.Public,
-        _ => Icons.Material.Filled.Info
-    };
-
-    private Color BattleStatusColor(int id, string stat)
-    {
-        if (Data!.Spies.TryGetValue(id, out var spy) is false || spy is null) return Color.Default;
-
-        var stats = Data.CurrentUser!.Stats;
-
-        return stat switch
+        _viewModels = filteredMembers.Select(kvp =>
         {
-            "str" => spy.Strength == 0 ? Color.Info : spy.Strength > stats.Strength ? Color.Error : Color.Success,
-            "def" => spy.Defense == 0 ? Color.Info : spy.Defense > stats.Defense ? Color.Error : Color.Success,
-            "spd" => spy.Speed == 0 ? Color.Info : spy.Speed > stats.Speed ? Color.Error : Color.Success,
-            "dex" => spy.Dexterity == 0 ? Color.Info : spy.Dexterity > stats.Dexterity ? Color.Error : Color.Success,
-            _ => spy.Total == 0 ? Color.Info : spy.Total > stats.Total ? Color.Error : Color.Success,
-        };
+            var id = kvp.Key;
+            var member = kvp.Value;
+            var spy = Data.Spies.GetValueOrDefault(id);
+            var stats = Data.CurrentUser.Stats;
 
+            return new MemberViewModel(
+                Id: id,
+                Name: member.Name,
+                Level: member.Level,
+                StatusColor: MemberViewModel.GetStatusColor(member.Last_Action.Status),
+                StatusText: member.Last_Action.Status,
+                TotalStats: MemberViewModel.GetSumStats(spy),
+                TotalStatsText: MemberViewModel.GetBattleStatsText(spy),
+                TotalStatsColor: MemberViewModel.GetBattleStatusColor(spy, stats, "sum"),
+                StrengthText: MemberViewModel.GetBattleStatsText(spy, "str"),
+                StrengthColor: MemberViewModel.GetBattleStatusColor(spy, stats, "str"),
+                DefenseText: MemberViewModel.GetBattleStatsText(spy, "def"),
+                DefenseColor: MemberViewModel.GetBattleStatusColor(spy, stats, "def"),
+                SpeedText: MemberViewModel.GetBattleStatsText(spy, "spd"),
+                SpeedColor: MemberViewModel.GetBattleStatusColor(spy, stats, "spd"),
+                DexterityText: MemberViewModel.GetBattleStatsText(spy, "dex"),
+                DexterityColor: MemberViewModel.GetBattleStatusColor(spy, stats, "dex"),
+                HasStatValues: spy is not null,
+                State: member.Status.State,
+                StateColor: MemberViewModel.GetStateColor(member.Status.State),
+                StateIcon: MemberViewModel.GetStateIcon(member.Status.State),
+                Until: member.Status.Until,
+                IsMonitored: Data.WarSession.FactionTargets.Contains(id)
+            );
+        }).ToList();
     }
-
-    private ulong SumStats(int id)
-    {
-        if (Data!.Spies.TryGetValue(id, out var spy) is false || spy is null) return 0;
-
-        return spy.Strength + spy.Defense + spy.Speed + spy.Dexterity;
-    }
-
-    private string GetBattleStats(int id, string stat = "Total")
-    {
-        if (Data!.Spies.TryGetValue(id, out var spy) && spy is not null)
-        {           
-            var value = stat switch
-            {
-                "str" => spy.Strength,
-                "def" => spy.Defense,
-                "spd" => spy.Speed,
-                "dex" => spy.Dexterity,
-                _ => spy.Total
-            };
-
-            if (value == 0) return "Unknown";
-
-            var cacheKey = (id, value);
-            if (_formattedStatsCache.TryGetValue(cacheKey, out var cached))
-                return cached;
-
-            var formatted = FormatNumber(value);
-            _formattedStatsCache[cacheKey] = formatted;
-            return formatted;
-        }
-
-        return "Unavailable";
-    }
-
-    private string FormatNumber(ulong number) => number switch
-    {
-        >= 1_000_000_000 => $"{number / 1_000_000_000}B",
-        >= 1_000_000 => $"{number / 1_000_000}M",
-        >= 1_000 => $"{number / 1_000}K",
-        _ => number.ToString()
-    };
-
-    private bool HasStatValues(int id) => Data!.Spies.TryGetValue(id, out var spy) && spy is not null;
 
     private async Task ToggleMonitoringAsync(bool monitor, int userId)
     {
@@ -464,6 +409,7 @@
         FilterState.Targets = Data!.WarSession.FactionTargets;
 
         await BrowserStore.SaveSessionAsync(Data.WarSession);
+        UpdateTableView();
     }
 
     public void Dispose()
