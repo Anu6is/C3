@@ -1,0 +1,41 @@
+<MudPaper Class="pa-4" Elevation="1">
+    <MudStack Spacing="3">
+        <!-- Toolbar skeleton -->
+        <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+            <MudSkeleton SkeletonType="SkeletonType.Text" Width="150px" Height="30px" Animation="Animation.Wave" />
+            <MudStack Row="true" Spacing="2">
+                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="200px" Height="40px" Animation="Animation.Wave" />
+                <MudSkeleton SkeletonType="SkeletonType.Circle" Width="40px" Height="40px" Animation="Animation.Wave" />
+                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="80px" Height="40px" Animation="Animation.Wave" />
+                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="80px" Height="40px" Animation="Animation.Wave" />
+            </MudStack>
+        </MudStack>
+
+        <!-- Header row skeleton -->
+        <MudStack Row="true" Justify="Justify.SpaceBetween" Class="pa-2">
+            <MudSkeleton SkeletonType="SkeletonType.Text" Width="150px" Animation="Animation.Wave" />
+            <MudSkeleton SkeletonType="SkeletonType.Text" Width="80px" Animation="Animation.Wave" />
+            <MudSkeleton SkeletonType="SkeletonType.Text" Width="100px" Animation="Animation.Wave" />
+            <MudSkeleton SkeletonType="SkeletonType.Text" Width="80px" Animation="Animation.Wave" />
+            <MudSkeleton SkeletonType="SkeletonType.Text" Width="100px" Animation="Animation.Wave" />
+            <MudSkeleton SkeletonType="SkeletonType.Text" Width="80px" Animation="Animation.Wave" />
+        </MudStack>
+
+        <!-- Data rows skeleton -->
+        @for (var i = 0; i < RowCount; i++)
+        {
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center" Class="pa-2">
+                <MudSkeleton SkeletonType="SkeletonType.Text" Width="150px" Animation="Animation.Wave" />
+                <MudSkeleton SkeletonType="SkeletonType.Text" Width="60px" Animation="Animation.Wave" />
+                <MudSkeleton SkeletonType="SkeletonType.Text" Width="80px" Animation="Animation.Wave" />
+                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Width="60px" Height="25px" Animation="Animation.Wave" />
+                <MudSkeleton SkeletonType="SkeletonType.Text" Width="100px" Animation="Animation.Wave" />
+                <MudSkeleton SkeletonType="SkeletonType.Circle" Width="30px" Height="30px" Animation="Animation.Wave" />
+            </MudStack>
+        }
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter] public int RowCount { get; set; } = 10;
+}
