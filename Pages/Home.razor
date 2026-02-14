@@ -184,6 +184,9 @@
     private Dictionary<int, TornFactionMember> RivalMembers = [];
     private string? _searchInput;
     private CancellationTokenSource? _searchCts;
+    private int _lastDataVersion;
+    private bool _filterChanged;
+    private readonly Dictionary<(int Id, ulong Value), string> _formattedStatsCache = [];
 
     private IReadOnlyCollection<string> SelectedValues 
     {
@@ -263,6 +266,7 @@
             _searchInput = FilterState.SearchString;
         }
         UpdateTableView();
+        _filterChanged = true;
         StateHasChanged();
     }
 
@@ -280,9 +284,24 @@
 
     protected override void OnParametersSet()
     {
-        UpdateTableView();
+        if (Data?.ChangeTracker.Version != _lastDataVersion)
+        {
+            _formattedStatsCache.Clear();
+            UpdateTableView();
+        }
 
         base.OnParametersSet();
+    }
+
+    protected override bool ShouldRender()
+    {
+        if (_filterChanged || Data?.ChangeTracker.Version != _lastDataVersion)
+        {
+            _filterChanged = false;
+            _lastDataVersion = Data?.ChangeTracker.Version ?? 0;
+            return true;
+        }
+        return false;
     }
 
     private async Task OnToggleChanged(bool state)
@@ -402,15 +421,25 @@
     {
         if (Data!.Spies.TryGetValue(id, out var spy) && spy is not null)
         {           
-            return  stat switch
+            var value = stat switch
             {
-                "str" => spy.Strength == 0 ? "Unknown" : FormatNumber(spy.Strength),
-                "def" => spy.Defense == 0 ? "Unknown" : FormatNumber(spy.Defense),
-                "spd" => spy.Speed == 0 ? "Unknown" : FormatNumber(spy.Speed),
-                "dex" => spy.Dexterity == 0 ? "Unknown" : FormatNumber(spy.Dexterity),
-                _ => spy.Total == 0 ? "Unknown" : FormatNumber(spy.Total)
+                "str" => spy.Strength,
+                "def" => spy.Defense,
+                "spd" => spy.Speed,
+                "dex" => spy.Dexterity,
+                _ => spy.Total
             };
-        };
+
+            if (value == 0) return "Unknown";
+
+            var cacheKey = (id, value);
+            if (_formattedStatsCache.TryGetValue(cacheKey, out var cached))
+                return cached;
+
+            var formatted = FormatNumber(value);
+            _formattedStatsCache[cacheKey] = formatted;
+            return formatted;
+        }
 
         return "Unavailable";
     }

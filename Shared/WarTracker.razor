@@ -36,13 +36,28 @@
 
     public double WarTarget => (double)Data!.UserFaction!.Ranked_Wars.Values.First().War.Target;
 
+    private int _lastDataVersion = -1;
+
     protected override void OnParametersSet()
     {
         if (Data?.RivalFaction is null) return;
 
-        TrackProgress();
+        if (Data.ChangeTracker.Version != _lastDataVersion)
+        {
+            TrackProgress();
+        }
 
         base.OnParametersSet();
+    }
+
+    protected override bool ShouldRender()
+    {
+        if (Data?.ChangeTracker.Version != _lastDataVersion)
+        {
+            _lastDataVersion = Data?.ChangeTracker.Version ?? 0;
+            return true;
+        }
+        return false;
     }
 
     private string FactionTag(TornFaction faction)
