@@ -6,7 +6,7 @@ public class ProtectedTokenStore(ICryptoService Crypto)
 {
     public const string Key = "c3KEY.torn.ranked.war.tracker_ccc";
 
-    public static string? EncryptedToken { get; set; }
+    public string? EncryptedToken { get; set; }
 
     public async Task SetTokenAsync(string apiKey)
     {

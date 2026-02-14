@@ -4,7 +4,7 @@ using C3.Models;
 
 namespace C3.Services;
 
-public class BrowserStorageService(ISessionStorageService sessionStorageService, ILocalStorageService localStorageService)
+public class BrowserStorageService(ISessionStorageService sessionStorageService)
 {
     private const string FilterKey = "filters";
     public async Task<WarSession> GetUserSessionAsync()
@@ -21,16 +21,16 @@ public class BrowserStorageService(ISessionStorageService sessionStorageService,
 
     public async Task<CustomFilterOptions?> GetFilterOptionsAsync()
     {
-        return await localStorageService.GetItemAsync<CustomFilterOptions>(FilterKey);
+        return await sessionStorageService.GetItemAsync<CustomFilterOptions>(FilterKey);
     }
 
     public async Task SaveFilterOptionsAsync(CustomFilterOptions filterOptions)
     {
-        await localStorageService.SetItemAsync(FilterKey, filterOptions);
+        await sessionStorageService.SetItemAsync(FilterKey, filterOptions);
     }
 
     public async Task DeleteFilterOptionsAsync()
     {
-        await localStorageService.RemoveItemAsync(FilterKey);
+        await sessionStorageService.RemoveItemAsync(FilterKey);
     }
 }
