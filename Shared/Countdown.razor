@@ -1,44 +1,48 @@
-﻿<MudText Typo="Typo.subtitle2">@_remaining</MudText>
+@inject TimerService TimerService
+@implements IDisposable
+
+<MudText Typo="Typo.subtitle2">@_remaining</MudText>
 
 @code {
     [EditorRequired][Parameter] public required ulong Seconds { get; set; }
     [Parameter] public bool Increasing { get; set; }
 
-    private PeriodicTimer Timer = new PeriodicTimer(TimeSpan.FromSeconds(1));
     private string _remaining = string.Empty;
 
-    protected override Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        _ = RemainingTimeAsync();
-
-        return base.OnInitializedAsync();
+        TimerService.OnTick += HandleTick;
+        UpdateDisplay();
     }
 
-    private async Task RemainingTimeAsync()
+    private void HandleTick()
     {
-        while(await Timer.WaitForNextTickAsync())
-        {
+        TimerService.RequestUpdate(UpdateDisplay);
+    }
 
-            if (Seconds == 0 && !Increasing)
-            {
-                Timer.Dispose();
-                return;
-            }
+    private void UpdateDisplay()
+    {
+        _remaining = CalculateRemaining();
+        StateHasChanged();
+    }
 
-            var timeUntil = DateTime.UnixEpoch.AddSeconds(Seconds);
+    private string CalculateRemaining()
+    {
+        if (Seconds == 0 && !Increasing)
+            return string.Empty;
 
-            var remaining = timeUntil - DateTime.UtcNow;
+        var timeUntil = DateTime.UnixEpoch.AddSeconds(Seconds);
+        var remaining = Increasing
+            ? DateTime.UtcNow - timeUntil
+            : timeUntil - DateTime.UtcNow;
 
-            if (remaining < TimeSpan.Zero && !Increasing)
-            {
-                _remaining = string.Empty;
-                Timer.Dispose();
-            }
-            else
-            {
-                _remaining = remaining.ToString(@"dd\.hh\:mm\:ss");
-                StateHasChanged();
-            }
-        }
+        return remaining < TimeSpan.Zero && !Increasing
+            ? string.Empty
+            : remaining.ToString(@"dd\.hh\:mm\:ss");
+    }
+
+    public void Dispose()
+    {
+        TimerService.OnTick -= HandleTick;
     }
 }

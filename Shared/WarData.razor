@@ -4,6 +4,8 @@
 @inject FilterStateContainer FilterState
 @inject ISnackbar Snackbar
 @inject ILogger<WarData> Logger
+@inject TimerService TimerService
+@implements IDisposable
 
 <CascadingValue Value="@this">
     @if (_errorMessage is not null)
@@ -43,7 +45,8 @@
     public WarDataChangeTracker ChangeTracker { get; } = new();
     private bool _initialized;
     private string? _errorMessage;
-    private PeriodicTimer Timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
+    private string? _monitorSubscriptionId;
+    private int _monitorFailureCount;
 
     public TornFaction? UserFaction { get; set; }
     public TornFaction? RivalFaction { get; set; }
@@ -73,11 +76,7 @@
 
         UserFaction = result.Value;
 
-        if (UserFaction!.Ranked_Wars.Count == 0)
-        {
-            Timer.Dispose();
-        }
-        else
+        if (UserFaction!.Ranked_Wars.Count != 0)
         {
             var war = UserFaction!.Ranked_Wars.First();
 
@@ -109,6 +108,8 @@
 
     public async Task MonitorWarProgressAsync()
     {
+        if (_monitorSubscriptionId != null) return;
+
         var rivalId = UserFaction!.Ranked_Wars.First().Value.Factions.First(x => x.Key != UserFaction.Id).Key;
 
         var spiesResult = await StatsService.GetFactionSpiesAsync(rivalId);
@@ -124,32 +125,40 @@
             }
         }
 
-        int failureCount = 0;
-        while (await Timer.WaitForNextTickAsync())
+        _monitorSubscriptionId = TimerService.Subscribe(async () => await TickWarMonitoring(rivalId), intervalTicks: 5);
+    }
+
+    private async Task TickWarMonitoring(int rivalId)
+    {
+        var result = await ApiService.GetFactionAsync(rivalId);
+
+        if (result.IsSuccess)
         {
-            var result = await ApiService.GetFactionAsync(rivalId);
-
-            if (result.IsSuccess)
+            _monitorFailureCount = 0;
+            var newFaction = result.Value;
+            if (HasFactionChanged(RivalFaction, newFaction))
             {
-                failureCount = 0;
-                var newFaction = result.Value;
-                if (HasFactionChanged(RivalFaction, newFaction))
-                {
-                    RivalFaction = newFaction;
-                    ChangeTracker.NotifyChanged();
-                    StateHasChanged();
-                }
-
-                if (RivalFaction!.Ranked_Wars.First().Value.War.End > 0) Timer.Dispose();
+                RivalFaction = newFaction;
+                ChangeTracker.NotifyChanged();
+                StateHasChanged();
             }
-            else
+
+            if (RivalFaction!.Ranked_Wars.First().Value.War.End > 0)
             {
-                failureCount++;
-                Logger.LogWarning("Error fetching rival faction data: {Error}", result.Error);
-                if (failureCount >= MaxApiFailureRetries)
+                if (_monitorSubscriptionId != null)
                 {
-                    Snackbar.Add($"Failed to update war progress: {result.Error}", Severity.Error);
+                    TimerService.Unsubscribe(_monitorSubscriptionId);
+                    _monitorSubscriptionId = null;
                 }
+            }
+        }
+        else
+        {
+            _monitorFailureCount++;
+            Logger.LogWarning("Error fetching rival faction data: {Error}", result.Error);
+            if (_monitorFailureCount >= MaxApiFailureRetries)
+            {
+                Snackbar.Add($"Failed to update war progress: {result.Error}", Severity.Error);
             }
         }
     }
@@ -193,5 +202,13 @@
                 return false;
         }
         return true;
+    }
+
+    public void Dispose()
+    {
+        if (_monitorSubscriptionId != null)
+        {
+            TimerService.Unsubscribe(_monitorSubscriptionId);
+        }
     }
 }
