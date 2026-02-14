@@ -23,10 +23,15 @@ builder.Services.AddScoped<FilterStateContainer>();
 builder.Services.AddScoped<ProtectedTokenStore>();
 builder.Services.AddScoped<BrowserStorageService>();
 builder.Services.AddScoped<MemberFilterService>();
+builder.Services.AddSingleton<TimerService>();
 
 builder.Services.AddSubtleCrypto(options => options.Key = ProtectedTokenStore.Key);
 
 builder.Services.AddHttpClient<TornApiService>(client => client.BaseAddress = new Uri(TornApiAddress));
 builder.Services.AddHttpClient<TornStatsApiService>(client => client.BaseAddress = new Uri(TornStatsApiAddress));
 
-await builder.Build().RunAsync();
+var host = builder.Build();
+var timerService = host.Services.GetRequiredService<TimerService>();
+timerService.Start();
+
+await host.RunAsync();
