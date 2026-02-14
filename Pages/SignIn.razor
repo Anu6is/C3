@@ -58,9 +58,16 @@
 
         await TokenStore.SetTokenAsync(arg);
 
-        _user = await ApiService.GetCurrentUserAsync();
+        var result = await ApiService.GetCurrentUserAsync();
 
-        return _user is null || _user.Name is null
+        if (result.IsFailure || result.Value is null)
+        {
+            return result.Error ?? "The key provided is invalid";
+        }
+
+        _user = result.Value;
+
+        return _user.Name is null
             ? "The key provided is invalid" 
             : _user.Faction.Faction_Id == 0 
                 ? "You don't belong to a Faction" 

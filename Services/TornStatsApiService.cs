@@ -1,17 +1,37 @@
-﻿using C3.Models;
+using C3.Models;
+using Microsoft.Extensions.Logging;
 using System.Net.Http.Json;
 
 namespace C3.Services;
 
-public class TornStatsApiService(HttpClient httpClient, ProtectedTokenStore TokenStore) : IDisposable
+public class TornStatsApiService(HttpClient httpClient, ProtectedTokenStore TokenStore, ILogger<TornStatsApiService> logger) : IDisposable
 {
-    public async Task<SpyResults?> GetFactionSpiesAsync(int factionId)
+    public async Task<Result<SpyResults>> GetFactionSpiesAsync(int factionId)
     {
-        var key = await TokenStore.GetTokenAsync();
+        try
+        {
+            var key = await TokenStore.GetTokenAsync();
+            if (key is null) return Result<SpyResults>.Failure("No API key available");
 
-        if (key is null) return null;
+            var result = await httpClient.GetFromJsonAsync<SpyResults>(Endpoints.FactionSpies(factionId).WithAuthorization(key));
 
-        return await httpClient.GetFromJsonAsync<SpyResults>(Endpoints.FactionSpies(factionId).WithAuthorization(key));
+            if (result is null)
+                return Result<SpyResults>.Failure("Failed to retrieve spy data");
+
+            if (!result.Status)
+                return Result<SpyResults>.Failure("TornStats API returned failure status");
+
+            return Result<SpyResults>.Success(result);
+        }
+        catch (HttpRequestException ex)
+        {
+            return Result<SpyResults>.Failure($"Network error: {ex.Message}");
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Unexpected error during TornStats API request");
+            return Result<SpyResults>.Failure($"Unexpected error: {ex.Message}");
+        }
     }
 
     public void Dispose() => httpClient.Dispose();

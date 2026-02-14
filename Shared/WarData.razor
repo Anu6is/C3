@@ -2,8 +2,16 @@
 @inject TornStatsApiService StatsService
 @inject BrowserStorageService BrowserStore
 @inject FilterStateContainer FilterState
+@inject ISnackbar Snackbar
+@inject ILogger<WarData> Logger
 
 <CascadingValue Value="@this">
+    @if (_errorMessage is not null)
+    {
+        <ErrorState Title="Failed to load war details" Message="@_errorMessage" OnRetry="GetWarDetailsAsync" />
+    }
+    else
+    {
     <Conditional Expression="@_initialized">
         <TrueContent>
             <Conditional Expression="@(UserFaction?.Ranked_Wars.Count != 0)">
@@ -27,6 +35,7 @@
             </MudStack>
         </FalseContent>
     </Conditional>
+    }
 </CascadingValue>
 
 @code {
@@ -36,7 +45,9 @@
     [EditorRequired][Parameter] public required ApplicationUser? CurrentUser { get; set; }
     [EditorRequired][Parameter] public required WarSession WarSession { get; set; }
 
+    private const int MaxApiFailureRetries = 3;
     private bool _initialized;
+    private string? _errorMessage;
     private PeriodicTimer Timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
 
     public TornFaction? UserFaction { get; set; }
@@ -52,9 +63,20 @@
 
     private async Task GetWarDetailsAsync()
     {
+        _errorMessage = null;
         var factionId = CurrentUser!.Faction.Faction_Id;
 
-        UserFaction = await ApiService.GetFactionAsync(factionId);
+        var result = await ApiService.GetFactionAsync(factionId);
+
+        if (result.IsFailure)
+        {
+            _errorMessage = result.Error;
+            _initialized = true;
+            StateHasChanged();
+            return;
+        }
+
+        UserFaction = result.Value;
 
         if (UserFaction!.Ranked_Wars.Count == 0)
         {
@@ -94,16 +116,31 @@
     {
         var rivalId = UserFaction!.Ranked_Wars.First().Value.Factions.First(x => x.Key != UserFaction.Id).Key;
 
-        var spies = await StatsService.GetFactionSpiesAsync(rivalId);
+        var spiesResult = await StatsService.GetFactionSpiesAsync(rivalId);
 
-        if (spies is not null && spies.Status is true)
-            Spies = spies.Faction.Members.Values.ToDictionary(member => member.Id, member => member.Spy);
+        if (spiesResult.IsSuccess && spiesResult.Value is not null)
+            Spies = spiesResult.Value.Faction.Members.Values.ToDictionary(member => member.Id, member => member.Spy);
 
+        int failureCount = 0;
         while (await Timer.WaitForNextTickAsync())
         {
-            RivalFaction = await ApiService.GetFactionAsync(rivalId);
+            var result = await ApiService.GetFactionAsync(rivalId);
 
-            if (RivalFaction!.Ranked_Wars.First().Value.War.End > 0) Timer.Dispose();
+            if (result.IsSuccess)
+            {
+                failureCount = 0;
+                RivalFaction = result.Value;
+                if (RivalFaction!.Ranked_Wars.First().Value.War.End > 0) Timer.Dispose();
+            }
+            else
+            {
+                failureCount++;
+                Logger.LogWarning("Error fetching rival faction data: {Error}", result.Error);
+                if (failureCount >= MaxApiFailureRetries)
+                {
+                    Snackbar.Add($"Failed to update war progress: {result.Error}", Severity.Error);
+                }
+            }
 
             StateHasChanged();
         }
