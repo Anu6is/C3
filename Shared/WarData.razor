@@ -12,11 +12,7 @@
     }
     else
     {
-    @if (!_initialized)
-    {
-        @ChildContent
-    }
-    else if (UserFaction?.Ranked_Wars.Count != 0)
+    @if (!_initialized || UserFaction?.Ranked_Wars.Count != 0)
     {
         @ChildContent
     }
