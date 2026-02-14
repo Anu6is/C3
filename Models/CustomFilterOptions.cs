@@ -4,8 +4,6 @@ namespace C3.Models;
 
 public class CustomFilterOptions
 {
-    public static CustomFilterOptions Instance { get; private set; } = new();
-
     public int? WarId { get; set; }
     public bool IsOkay { get; set; }
     public bool InHospital { get; set; }
@@ -14,13 +12,18 @@ public class CustomFilterOptions
     public string? FilterString { get; set; }
     public List<int> Targets { get; set; } = [];
 
-    [JsonConstructor]
-    private CustomFilterOptions() { }
+    public CustomFilterOptions() { }
 
-    public static CustomFilterOptions FromCache(CustomFilterOptions? filterOptions)
+    public void UpdateFrom(CustomFilterOptions? filterOptions)
     {
-        Instance = filterOptions ?? new();
+        if (filterOptions is null) return;
 
-        return Instance;
+        WarId = filterOptions.WarId;
+        IsOkay = filterOptions.IsOkay;
+        InHospital = filterOptions.InHospital;
+        IsMonitored = filterOptions.IsMonitored;
+        HasHigherStats = filterOptions.HasHigherStats;
+        FilterString = filterOptions.FilterString;
+        Targets = filterOptions.Targets;
     }
 }

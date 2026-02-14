@@ -1,6 +1,7 @@
 ﻿@page "/"
 
 @inject BrowserStorageService BrowserStore
+@inject CustomFilterOptions FilterOptions
 
 <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="4" Style="width:100%">
     <WarTracker />
@@ -112,10 +113,10 @@
     private MudDataGrid<KeyValuePair<int, TornFactionMember>>? _dataGrid;
     private Dictionary<int, TornFactionMember> RivalMembers = [];
 
-    private static bool _monitored;
-    private static bool? _hasHigherStats;
-    private static string? _searchString;
-    private static ICollection<object> _selectedValues = [];
+    private bool _monitored;
+    private bool? _hasHigherStats;
+    private string? _searchString;
+    private ICollection<object> _selectedValues = [];
 
     private ICollection<object> SelectedValues 
     {
@@ -124,8 +125,8 @@
         {
             _selectedValues = value;
 
-            CustomFilterOptions.Instance.IsOkay = _selectedValues.Contains("Okay");
-            CustomFilterOptions.Instance.InHospital = _selectedValues.Contains("Hospital");
+            FilterOptions.IsOkay = _selectedValues.Contains("Okay");
+            FilterOptions.InHospital = _selectedValues.Contains("Hospital");
 
             UpdateTableView();
         }
@@ -138,7 +139,7 @@
         {
             _monitored = value;
 
-            CustomFilterOptions.Instance.IsMonitored = _monitored;
+            FilterOptions.IsMonitored = _monitored;
 
             UpdateTableView();
         } 
@@ -146,17 +147,17 @@
 
     private Func<KeyValuePair<int, TornFactionMember>, bool> _quickFilter => pair =>
     {
-        _searchString = _searchString?.Trim();
+        FilterOptions.FilterString = _searchString?.Trim();
 
-        if (string.IsNullOrWhiteSpace(_searchString) || _searchString.Length < 3) return true;
+        if (string.IsNullOrWhiteSpace(FilterOptions.FilterString) || FilterOptions.FilterString.Length < 3) return true;
 
-        if (pair.Value.FilterByStatus(_searchString)) return true;
+        if (pair.Value.FilterByStatus(FilterOptions.FilterString)) return true;
 
-        if (pair.Value.FilterByName(_searchString)) return true;
+        if (pair.Value.FilterByName(FilterOptions.FilterString)) return true;
 
-        if (pair.Value.FilterByLevel(_searchString)) return true;
+        if (pair.Value.FilterByLevel(FilterOptions.FilterString)) return true;
 
-        if (pair.Value.FilterByBattleStats(_searchString, SumStats(pair.Key))) return true;
+        if (pair.Value.FilterByBattleStats(FilterOptions.FilterString, SumStats(pair.Key))) return true;
 
         return false;
     };
@@ -170,9 +171,11 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        CustomFilterOptions.Instance.FilterString = _searchString;
-
-        if (firstRender is false) return;
+        if (firstRender is false)
+        {
+            FilterOptions.FilterString = _searchString;
+            return;
+        }
 
         var filterOptions = await BrowserStore.GetFilterOptionsAsync();
 
@@ -181,10 +184,12 @@
             _searchString = filterOptions.FilterString;
             _hasHigherStats = filterOptions.HasHigherStats;
 
+            _selectedValues.Clear();
             if (filterOptions.IsOkay) _selectedValues.Add("Okay");
             if (filterOptions.InHospital) _selectedValues.Add("Hospital");
 
             Monitored = filterOptions.IsMonitored;
+            FilterOptions.UpdateFrom(filterOptions);
         }
 
         await _dataGrid!.SetSortAsync("Level", SortDirection.Descending, x => x.Value.Level);
@@ -213,7 +218,7 @@
         else 
             await _dataGrid!.SetSortAsync("Level", SortDirection.Descending, x => x.Value.Level);
 
-        CustomFilterOptions.Instance.HasHigherStats = _hasHigherStats;
+        FilterOptions.HasHigherStats = _hasHigherStats;
 
         UpdateTableView();
     }
@@ -313,7 +318,7 @@
         else
             Data!.WarSession.FactionTargets.Remove(userId);
 
-        CustomFilterOptions.Instance.Targets = Data!.WarSession.FactionTargets;
+        FilterOptions.Targets = Data!.WarSession.FactionTargets;
 
         await BrowserStore.SaveSessionAsync(Data.WarSession);
     }

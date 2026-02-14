@@ -1,6 +1,7 @@
 ﻿@inject TornApiService ApiService
 @inject TornStatsApiService StatsService
 @inject BrowserStorageService BrowserStore
+@inject CustomFilterOptions FilterOptions
 
 <CascadingValue Value="@this">
     <Conditional Expression="@_initialized">
@@ -77,7 +78,7 @@
                 else
                 {
                     WarSession.FactionTargets = filterOptions.Targets;
-                    C3.Models.CustomFilterOptions.FromCache(filterOptions);
+                    FilterOptions.UpdateFrom(filterOptions);
                 }
             }
 

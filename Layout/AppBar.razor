@@ -1,4 +1,5 @@
 ﻿@inject BrowserStorageService BrowserStore
+@inject CustomFilterOptions FilterOptions
 @inject ISnackbar Snackbar
 
 <MudAppBar Elevation="3" Dense="true" Color="Color.Primary">
@@ -36,11 +37,9 @@
 
     private async Task SaveFiltersAsync(MouseEventArgs args)
     {
-        var filters = CustomFilterOptions.Instance;
+        FilterOptions.WarId = WarId;
 
-        filters.WarId = WarId;
-
-        await BrowserStore.SaveFilterOptionsAsync(filters);
+        await BrowserStore.SaveFilterOptionsAsync(FilterOptions);
 
         Snackbar.Add("Filter options saved!", Severity.Success);
     }
