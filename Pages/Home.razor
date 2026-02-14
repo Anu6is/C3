@@ -15,11 +15,11 @@
             <MudToggleIconButton Icon="@Icons.Material.Filled.KeyboardDoubleArrowDown" ToggledIcon="@Icons.Material.Filled.KeyboardDoubleArrowUp"
                                  Color="@(_hasHigherStats is null ? Color.Default : Color.Success)" ToggledColor="Color.Error"
                                  Toggled="@(_hasHigherStats ?? false)" ToggledChanged="@OnToggleChanged" />
-            <MudChipSet Class="d-none d-sm-flex" MultiSelection="true" Filter="true" @bind-SelectedValues="@SelectedValues">
+            <MudChipSet Class="d-none d-sm-flex" SelectionMode="SelectionMode.MultiSelection" CheckMark @bind-SelectedValues="@SelectedValues">
                 <MudChip Text="Okay" Color="Color.Primary" SelectedColor="Color.Success" Label="true" Size="Size.Medium" Style="width:80px;" Value="@("Okay")"/>
                 <MudChip Text="Hospital" Color="Color.Primary" SelectedColor="Color.Error" Label="true" Size="Size.Medium" Style="width:80px;" Value="@("Hospital")" />
             </MudChipSet>
-            <MudChipSet Class="d-flex d-sm-none" MultiSelection="true" Filter="true" @bind-SelectedValues="@SelectedValues">
+            <MudChipSet Class="d-flex d-sm-none" SelectionMode="SelectionMode.MultiSelection" CheckMark @bind-SelectedValues="@SelectedValues">
                 <MudChip Color="Color.Primary" SelectedColor="Color.Success" Label="true" Size="Size.Medium" Value="@("Okay")"
                          Icon="@Icons.Material.Filled.AccessibilityNew" CheckedIcon="@Icons.Material.Filled.AccessibilityNew" />
                 <MudChip Color="Color.Primary" SelectedColor="Color.Error" Label="true" Size="Size.Medium" Value="@("Hospital")"
@@ -115,9 +115,9 @@
     private static bool _monitored;
     private static bool? _hasHigherStats;
     private static string? _searchString;
-    private static ICollection<object> _selectedValues = [];
+    private static IReadOnlyCollection<string> _selectedValues = [];
 
-    private ICollection<object> SelectedValues 
+    private IReadOnlyCollection<string> SelectedValues 
     {
         get => _selectedValues;
         set
@@ -181,8 +181,8 @@
             _searchString = filterOptions.FilterString;
             _hasHigherStats = filterOptions.HasHigherStats;
 
-            if (filterOptions.IsOkay) _selectedValues.Add("Okay");
-            if (filterOptions.InHospital) _selectedValues.Add("Hospital");
+            if (filterOptions.IsOkay) _selectedValues.Prepend("Okay");
+            if (filterOptions.InHospital) _selectedValues.Prepend("Hospital");
 
             Monitored = filterOptions.IsMonitored;
         }
