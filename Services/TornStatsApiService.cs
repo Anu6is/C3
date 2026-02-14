@@ -1,9 +1,10 @@
 using C3.Models;
+using Microsoft.Extensions.Logging;
 using System.Net.Http.Json;
 
 namespace C3.Services;
 
-public class TornStatsApiService(HttpClient httpClient, ProtectedTokenStore TokenStore) : IDisposable
+public class TornStatsApiService(HttpClient httpClient, ProtectedTokenStore TokenStore, ILogger<TornStatsApiService> logger) : IDisposable
 {
     public async Task<Result<SpyResults>> GetFactionSpiesAsync(int factionId)
     {
@@ -28,6 +29,7 @@ public class TornStatsApiService(HttpClient httpClient, ProtectedTokenStore Toke
         }
         catch (Exception ex)
         {
+            logger.LogError(ex, "Unexpected error during TornStats API request");
             return Result<SpyResults>.Failure($"Unexpected error: {ex.Message}");
         }
     }

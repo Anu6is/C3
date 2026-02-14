@@ -1,10 +1,11 @@
 using C3.Models;
+using Microsoft.Extensions.Logging;
 using System.Net.Http.Json;
 using System.Text.Json;
 
 namespace C3.Services;
 
-public sealed class TornApiService(HttpClient httpClient, ProtectedTokenStore TokenStore) : IDisposable
+public sealed class TornApiService(HttpClient httpClient, ProtectedTokenStore TokenStore, ILogger<TornApiService> logger) : IDisposable
 {
     private static readonly JsonSerializerOptions _jsonOptions = new() { PropertyNameCaseInsensitive = true };
 
@@ -54,6 +55,7 @@ public sealed class TornApiService(HttpClient httpClient, ProtectedTokenStore To
         }
         catch (Exception ex)
         {
+            logger.LogError(ex, "Unexpected error during Torn API request to {Url}", url);
             return Result<T>.Failure($"Unexpected error: {ex.Message}");
         }
     }

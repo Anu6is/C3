@@ -3,6 +3,7 @@
 @inject BrowserStorageService BrowserStore
 @inject FilterStateContainer FilterState
 @inject ISnackbar Snackbar
+@inject ILogger<WarData> Logger
 
 <CascadingValue Value="@this">
     @if (_errorMessage is not null)
@@ -44,6 +45,7 @@
     [EditorRequired][Parameter] public required ApplicationUser? CurrentUser { get; set; }
     [EditorRequired][Parameter] public required WarSession WarSession { get; set; }
 
+    private const int MaxApiFailureRetries = 3;
     private bool _initialized;
     private string? _errorMessage;
     private PeriodicTimer Timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
@@ -133,8 +135,8 @@
             else
             {
                 failureCount++;
-                Console.WriteLine($"Error fetching rival faction data: {result.Error}");
-                if (failureCount >= 3)
+                Logger.LogWarning("Error fetching rival faction data: {Error}", result.Error);
+                if (failureCount >= MaxApiFailureRetries)
                 {
                     Snackbar.Add($"Failed to update war progress: {result.Error}", Severity.Error);
                 }

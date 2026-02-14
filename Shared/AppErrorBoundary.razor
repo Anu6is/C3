@@ -1,5 +1,6 @@
 @using Microsoft.AspNetCore.Components.Web
 @inherits ErrorBoundaryBase
+@inject ILogger<AppErrorBoundary> Logger
 
 @if (CurrentException is not null)
 {
@@ -38,7 +39,7 @@ else
 
     protected override Task OnErrorAsync(Exception exception)
     {
-        Console.WriteLine($"Error caught by boundary: {exception.Message}");
+        Logger.LogError(exception, "Error caught by boundary");
         return Task.CompletedTask;
     }
 }
