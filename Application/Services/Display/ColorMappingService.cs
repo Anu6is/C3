@@ -40,13 +40,16 @@ public class ColorMappingService
     {
         if (spy is null) return Color.Default;
 
+        Color GetColor(ulong spyValue, ulong userValue) =>
+            spyValue == 0 ? Color.Info : spyValue > userValue ? Color.Error : Color.Success;
+
         return stat switch
         {
-            "str" => spy.Strength == 0 ? Color.Info : spy.Strength > stats.Strength ? Color.Error : Color.Success,
-            "def" => spy.Defense == 0 ? Color.Info : spy.Defense > stats.Defense ? Color.Error : Color.Success,
-            "spd" => spy.Speed == 0 ? Color.Info : spy.Speed > stats.Speed ? Color.Error : Color.Success,
-            "dex" => spy.Dexterity == 0 ? Color.Info : spy.Dexterity > stats.Dexterity ? Color.Error : Color.Success,
-            _ => spy.Total == 0 ? Color.Info : spy.Total > stats.Total ? Color.Error : Color.Success,
+            "str" => GetColor(spy.Strength, stats.Strength),
+            "def" => GetColor(spy.Defense, stats.Defense),
+            "spd" => GetColor(spy.Speed, stats.Speed),
+            "dex" => GetColor(spy.Dexterity, stats.Dexterity),
+            _ => GetColor(spy.Total, stats.Total),
         };
     }
 }

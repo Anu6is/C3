@@ -33,6 +33,7 @@ public partial class Home : IDisposable
     private CancellationTokenSource? _searchCts;
     private int _lastDataVersion;
     private bool _filterChanged;
+    private bool _initialSortApplied;
 
     private IReadOnlyCollection<string> SelectedValues { get => FilterState.SelectedValues; set => FilterState.SelectedValues = value; }
     private bool Monitored { get => FilterState.IsMonitored; set => FilterState.IsMonitored = value; }
@@ -55,8 +56,11 @@ public partial class Home : IDisposable
     private void HandleStateChange() { if (_searchInput != FilterState.SearchString) _searchInput = FilterState.SearchString; UpdateTableView(); _filterChanged = true; StateHasChanged(); }
 
     protected override async Task OnAfterRenderAsync(bool firstRender) {
-        if (_dataState == LoadingState.Loaded && _dataGrid != null && _viewModels.Any() && !firstRender && _lastDataVersion == 0)
+        if (_dataState == LoadingState.Loaded && _dataGrid != null && _viewModels.Any() && !_initialSortApplied)
+        {
+            _initialSortApplied = true;
             await _dataGrid.SetSortAsync(HasHigherStats is not null ? "Total Stats" : "Level", SortDirection.Descending, x => HasHigherStats is not null ? x.BattleStats : x.Level);
+        }
     }
 
     protected override void OnParametersSet() { if (Data?.ChangeTracker.Version != _lastDataVersion) UpdateTableView(); }

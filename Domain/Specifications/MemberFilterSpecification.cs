@@ -19,8 +19,11 @@ public class MemberFilterSpecification
 
     public MemberFilterSpecification WithMonitoredOnly(IEnumerable<int> monitoredIds)
     {
-        var monitoredSet = monitoredIds.ToHashSet();
-        _filters.Add((id, member) => monitoredSet.Contains(id));
+        if (monitoredIds?.Any() == true)
+        {
+            var monitoredSet = monitoredIds.ToHashSet();
+            _filters.Add((id, member) => monitoredSet.Contains(id));
+        }
         return this;
     }
 
