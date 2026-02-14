@@ -77,7 +77,7 @@
                 }
                 else
                 {
-                    WarSession.FactionTargets = filterOptions.Targets;
+                    WarSession.FactionTargets = filterOptions.Targets?.ToList() ?? [];
                     FilterOptions.UpdateFrom(filterOptions);
                 }
             }
