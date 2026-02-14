@@ -97,13 +97,17 @@ public class FilterStateContainer
         }
     }
 
-    public List<int> Targets
+    public IEnumerable<int> Targets
     {
-        get => _targets;
+        get => _targets.AsReadOnly();
         set
         {
-            _targets = value;
-            NotifyStateChanged();
+            var newTargets = value?.ToList() ?? [];
+            if (!_targets.SequenceEqual(newTargets))
+            {
+                _targets = newTargets;
+                NotifyStateChanged();
+            }
         }
     }
 
