@@ -8,6 +8,7 @@
 <MudStack AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="4" Style="width:100%">
     <WarTracker />
 
+    <AppErrorBoundary Title="Failed to Load War Data">
     <MudDataGrid @ref="@_dataGrid" T="KeyValuePair<int, TornFactionMember>" Items="@RivalMembers" Style="width:100%;" Height="60vh" Loading="@(Data?.RivalFaction is null)"
                  Class="mb-8" Dense="true" FixedHeader="true" FixedFooter="true" Filterable="false" Hover="true" SortMode="SortMode.Multiple" QuickFilter="@_quickFilter">
         <ToolBarContent>
@@ -107,6 +108,7 @@
             </MudHidden>
         </PagerContent>
     </MudDataGrid>
+    </AppErrorBoundary>
 </MudStack>
 
 @code {

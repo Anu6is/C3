@@ -16,7 +16,9 @@
                         WarId="@WarSession.WarId" StartTime="@WarSession.StartTime" Winner="@Winner" />
                 <MudMainContent Style="height:100vh;">
                     <MudContainer Class="mt-4" MaxWidth="MaxWidth.Large">
-                        @Body
+                        <AppErrorBoundary>
+                            @Body
+                        </AppErrorBoundary>
                     </MudContainer>
                 </MudMainContent>
             </WarData>
@@ -51,11 +53,15 @@
 
         if (token is null) return null;
 
-        var user = await ApiService.GetCurrentUserAsync();
+        var result = await ApiService.GetCurrentUserAsync();
 
-        if (user?.Name is null) return null;
+        if (result.IsFailure || result.Value is null) return null;
 
-        return new ApplicationUser(user!.Player_Id, user!.Name, user!.Faction, new(user.Strength, user.Defense, user.Speed, user.Dexterity), token)
+        var user = result.Value;
+
+        if (user.Name is null) return null;
+
+        return new ApplicationUser(user.Player_Id, user.Name, user.Faction, new(user.Strength, user.Defense, user.Speed, user.Dexterity), token)
         {
             State = user.Status,
             ActivityStatus = user.Last_Action
