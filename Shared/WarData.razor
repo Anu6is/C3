@@ -177,13 +177,13 @@
         }
 
         if (oldF.RankedWars.Count != newF.RankedWars.Count) return true;
-        for (int i = 0; i < oldF.RankedWars.Count; i++)
-        {
-            var oldWar = oldF.RankedWars[i];
-            var newWar = newF.RankedWars[i];
 
-            if (oldWar.WarId != newWar.WarId ||
-                oldWar.StartTime != newWar.StartTime ||
+        var newWarsById = newF.RankedWars.ToDictionary(w => w.WarId);
+        foreach (var oldWar in oldF.RankedWars)
+        {
+            if (!newWarsById.TryGetValue(oldWar.WarId, out var newWar)) return true;
+
+            if (oldWar.StartTime != newWar.StartTime ||
                 oldWar.EndTime != newWar.EndTime ||
                 oldWar.TargetScore != newWar.TargetScore ||
                 oldWar.WinnerFactionId != newWar.WinnerFactionId)

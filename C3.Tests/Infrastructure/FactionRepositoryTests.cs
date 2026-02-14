@@ -63,6 +63,40 @@ public class FactionRepositoryTests
         _mockApiService.Verify(x => x.GetFactionAsync(1), Times.Once);
     }
 
+    [Fact]
+    public async Task GetFactionSpiesAsync_ValidId_ReturnsSuccess()
+    {
+        // Arrange
+        var testSpies = CreateTestSpyResults();
+        _mockStatsService.Setup(x => x.GetFactionSpiesAsync(It.IsAny<int>()))
+            .ReturnsAsync(Result<SpyResults>.Success(testSpies));
+
+        // Act
+        var result = await _repository.GetFactionSpiesAsync(1);
+
+        // Assert
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.Value);
+        Assert.Single(result.Value);
+        Assert.True(result.Value.ContainsKey(123));
+        Assert.Equal(1000UL, result.Value[123].Total);
+    }
+
+    [Fact]
+    public async Task GetFactionSpiesAsync_CachesResults()
+    {
+        // Arrange
+        _mockStatsService.Setup(x => x.GetFactionSpiesAsync(It.IsAny<int>()))
+            .ReturnsAsync(Result<SpyResults>.Success(CreateTestSpyResults()));
+
+        // Act
+        await _repository.GetFactionSpiesAsync(1);
+        await _repository.GetFactionSpiesAsync(1);
+
+        // Assert
+        _mockStatsService.Verify(x => x.GetFactionSpiesAsync(1), Times.Once);
+    }
+
     private static TornFaction CreateTestFaction()
     {
         return new TornFaction(
@@ -72,5 +106,14 @@ public class FactionRepositoryTests
             "img.png",
             new Dictionary<int, TornFactionMember>(),
             new Dictionary<int, TornFactionRankedWar>());
+    }
+
+    private static SpyResults CreateTestSpyResults()
+    {
+        var members = new Dictionary<string, Member>
+        {
+            ["123"] = new Member(123, "Member1", new Spy(250, 250, 250, 250, 1000, 0))
+        };
+        return new SpyResults(true, new Faction(1, "Faction1", members));
     }
 }

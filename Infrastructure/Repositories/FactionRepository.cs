@@ -30,10 +30,10 @@ public class FactionRepository : IFactionRepository
     {
         var cacheKey = $"faction_{factionId}";
 
-        if (_cache.TryGetValue(cacheKey, out FactionData? cached))
+        if (_cache.TryGetValue(cacheKey, out FactionData? cached) && cached is not null)
         {
             _logger.LogDebug("Returning cached faction data for {FactionId}", factionId);
-            return Result<FactionData>.Success(cached!);
+            return Result<FactionData>.Success(cached);
         }
 
         var result = await _apiService.GetFactionAsync(factionId);
@@ -60,9 +60,9 @@ public class FactionRepository : IFactionRepository
     {
         var cacheKey = $"spies_{factionId}";
 
-        if (_cache.TryGetValue(cacheKey, out Dictionary<int, SpyData>? cached))
+        if (_cache.TryGetValue(cacheKey, out Dictionary<int, SpyData>? cached) && cached is not null)
         {
-            return Result<Dictionary<int, SpyData>>.Success(cached!);
+            return Result<Dictionary<int, SpyData>>.Success(cached);
         }
 
         var result = await _statsService.GetFactionSpiesAsync(factionId);

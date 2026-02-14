@@ -38,6 +38,36 @@ public class UserRepositoryTests
         Assert.Equal(testUser.Player_Id, result.Value!.PlayerId);
     }
 
+    [Fact]
+    public async Task GetCurrentUserAsync_ApiFailure_ReturnsFailure()
+    {
+        // Arrange
+        _mockApiService.Setup(x => x.GetCurrentUserAsync())
+            .ReturnsAsync(Result<TornUser>.Failure("API Error"));
+
+        // Act
+        var result = await _repository.GetCurrentUserAsync();
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal("API Error", result.Error);
+    }
+
+    [Fact]
+    public async Task GetCurrentUserAsync_NullUser_ReturnsFailure()
+    {
+        // Arrange
+        _mockApiService.Setup(x => x.GetCurrentUserAsync())
+            .ReturnsAsync(Result<TornUser>.Success(null!));
+
+        // Act
+        var result = await _repository.GetCurrentUserAsync();
+
+        // Assert
+        Assert.False(result.IsSuccess);
+        Assert.Equal("Failed to retrieve user data", result.Error);
+    }
+
     private static TornUser CreateTestUser()
     {
         return new TornUser(
