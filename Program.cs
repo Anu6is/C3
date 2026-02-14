@@ -18,7 +18,8 @@ builder.Services.AddMudServices();
 builder.Services.AddBlazoredLocalStorage();
 builder.Services.AddBlazoredSessionStorage();
 
-builder.Services.AddSingleton<WarSession>();
+builder.Services.AddScoped<WarSession>();
+builder.Services.AddScoped<FilterStateContainer>();
 builder.Services.AddScoped<ProtectedTokenStore>();
 builder.Services.AddScoped<BrowserStorageService>();
 

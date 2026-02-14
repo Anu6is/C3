@@ -64,7 +64,7 @@
 
     private void SuccessfulSignin(ApplicationUser user)
     {
-        WarSession.EncryptedToken = ProtectedTokenStore.EncryptedToken;
+        WarSession.EncryptedToken = TokenStore.EncryptedToken;
         CurrentUser = user;
     }
 
