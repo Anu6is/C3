@@ -9,9 +9,9 @@ using C3.Presentation.ViewModels;
 using C3.Presentation.Mapping;
 using C3.Infrastructure.Storage;
 using C3.Presentation.Enums;
-using C3.Shared;
+using C3.Presentation.Shared;
 
-namespace C3.Pages;
+namespace C3.Presentation.Pages;
 
 public partial class Home : IDisposable
 {

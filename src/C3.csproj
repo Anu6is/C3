@@ -10,13 +10,14 @@
 	<InvariantGlobalization>true</InvariantGlobalization>
 	<BlazorEnableTimeZoneSupport>false</BlazorEnableTimeZoneSupport>
 	<BlazorWebAssemblyPreserveCollationData>false</BlazorWebAssemblyPreserveCollationData>
+    <WebRoot>Presentation/wwwroot</WebRoot>
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="C3.Tests\**" />
-    <Content Remove="C3.Tests\**" />
-    <EmbeddedResource Remove="C3.Tests\**" />
-    <None Remove="C3.Tests\**" />
+    <Content Include="Presentation\wwwroot\**">
+      <Link>wwwroot\%(RecursiveDir)%(FileName)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
   <ItemGroup>

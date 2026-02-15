@@ -5,5 +5,5 @@
     <Platform Name="x86" />
   </Configurations>
   <Project Path="C3.csproj" />
-  <Project Path="C3.Tests/C3.Tests.csproj" />
+  <Project Path="../tests/C3.Tests.csproj" />
 </Solution>

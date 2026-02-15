@@ -1,5 +1,5 @@
 <p align="center">
-<img alt="Conflict Command Center" src="wwwroot/icon-192.png" />
+<img alt="Conflict Command Center" src="src/Presentation/wwwroot/icon-192.png" />
 </p>  
 
 
