@@ -1,7 +1,7 @@
 using Blazor.SubtleCrypto;
 using Blazored.LocalStorage;
 using Blazored.SessionStorage;
-using C3;
+using C3.Presentation;
 using C3.Domain.Models;
 using C3.Application.State;
 using C3.Application.Services;

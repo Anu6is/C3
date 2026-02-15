@@ -21,7 +21,7 @@ jobs:
 
       # Publish the site
       - name: Publish
-        run: dotnet publish C3.sln -c:Release -o:publish -p:GHPages=true
+        run: dotnet publish src/C3.csproj -c:Release -o:publish -p:GHPages=true
 
       # Deploy the site
       - name: Deploy
